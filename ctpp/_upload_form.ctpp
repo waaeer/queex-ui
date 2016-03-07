@@ -1,0 +1,11 @@
+<form action="<TMPL_var uploadURI>" style="" method="POST" enctype="multipart/form-data" target="hf">
+	<input type="hidden" name="cb" >
+	<input type="file" name="file" id="upload_faf" onchange="this.form.submit();" style="position:absolute; left: -5200px; opacity:0; filter: alpha(opacity=0);">
+</form>
+<form action="<TMPL_var uploadURI>" style="" method="POST" enctype="multipart/form-data" target="hf">
+	<input type="hidden" name="cb" >
+	<input type="file" name="file" multiple id="upload_fafm" onchange="this.form.submit();" style="position:absolute; left: -5200px; opacity:0; filter: alpha(opacity=0);">
+</form>
+<iframe src="about:" name="hf" width="1" height="1" style="visibility: hidden;"></iframe>
+
+

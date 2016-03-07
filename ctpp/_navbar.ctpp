@@ -1,0 +1,31 @@
+<TMPL_comment> По образцу из http://getbootstrap.com/components/#navbar  </TMPL_comment>
+<TMPL_comment>===========================================================</TMPL_comment>
+<TMPL_BLOCK 'queex-ui-navbar' args(items)>
+<nav class="navbar navbar-default">
+	<div class="container-fluid">
+		<div class="collapse navbar-collapse">
+			<ul class="nav navbar-nav">
+				<TMPL_foreach items AS item>
+					<li class="<TMPL_if item.subitems>dropdown</TMPL_if>">
+						<TMPL_if item.subitems>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><TMPL_var item.html> <span class="caret"></span></a>
+							<ul class="dropdown-menu" role="menu">
+								<TMPL_foreach item.subitems AS subitem>
+									<TMPL_if subitem.divider>
+										<li class="divider"></li>
+									<TMPL_else>
+										<li><a href="<TMPL_var subitem.url>"><TMPL_var subitem.html></a></li>
+									</TMPL_if>	
+								</TMPL_foreach>
+							</ul>
+						<TMPL_else>
+							<a href="<TMPL_var item.url>"><TMPL_var item.html></a>
+						</TMPL_if>
+					</li>
+				</TMPL_foreach>
+			</ul>
+		</div>
+	</div><!-- /.container-fluid -->
+</nav>
+</TMPL_BLOCK>
+

@@ -1,0 +1,36 @@
+	<script type="text/template" id="pager_template">
+		 <% if (n > page_size) { 
+				page =  parseInt(page);
+				var first_page = parseInt(page - 0.5*width);
+				if (first_page < 1) first_page = 1;
+				var end_page = 1 + parseInt((n-1)/page_size);
+				var last_page = first_page + width -1 ;
+				if (last_page > end_page) last_page = end_page;
+		 %>
+
+<nav><ul class="pagination">
+  <% if( (nav & 1) && page>1) { %>
+  <li><a href="#" page="<%- page-1 %>" aria-label="Предыдущая">&lt;&lt;</a></li>
+  <% } %>
+  <% if(( nav & 2) && first_page > 1) { %>
+  <li><a href="#" page="1" >1
+		<% if(first_page > 2) { %>…<% } %>
+		</a>
+	</li>
+  <% } %>
+  <% for(var i=first_page;i<=last_page;i++) { %>
+  <li><a href="#" <%= i==page ? 'class="current"' : '' %> page="<%= i %>"><%= i %></a></li>
+  <% } %>
+  <% if(( nav & 4 && last_page < end_page)) { %>
+  <li>  <a href="#" page="<%= end_page %>">
+		<% if(last_page < end_page - 1 ) { %>…<% } %>
+		<%= end_page %>
+  </a></li>
+  <% } %>
+  <% if( (nav & 8) && page< end_page) { %>
+  <li><a href="#" page="<%= page + 1 %>" aria-label="Следующая">&gt;&gt;</a></li>
+  <% } %>
+</ul></nav>
+		<% } %>
+
+	</script>

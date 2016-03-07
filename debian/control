@@ -1,0 +1,10 @@
+Source: queex-ui
+Maintainer: Ivan Panchenko <wao@mail.ru>
+Section: httpd
+Priority: optional
+Standards-Version: 3.9.6.0
+Build-Depends: wget
+
+Package: queex-ui
+Architecture: all
+Description: JS thick client toolkit based on JQuery, Underscore, Bootstrap etc.

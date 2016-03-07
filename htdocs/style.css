@@ -1,0 +1,37 @@
+.waiting {
+	background-image: url(/lib/queex-ui/img/ajax-loader-ring-small.gif);
+	background-position: 15px center;
+	background-repeat: no-repeat;
+	padding-left: 40px;
+}
+.modal-body .glyphicon {
+	padding-right: 10px;
+}
+.modal.error .modal-body {
+ 	color: #770000;
+}
+.labels-item { 
+	display: inline-block; 
+	border: solid #777777 1px;
+	border-radius: 4px;
+	padding: 0px 5px;
+	margin: 0 10px 0 0;
+}
+.labels-item:hover { 
+	background-color:#eeeeee;
+}
+.labels-item-delete { 
+	position: relative; top:3px; cursor: pointer;
+}
+ul.pseudo-select li { cursor: pointer; padding: 2px 4px; } 
+ul.pseudo-select li.label { cursor: pointer; }
+ul.pseudo-select li.not-selectable { cursor: defaul; } 
+.pagination .current { font-weight: bold; } 
+ul.pseudo-select li:hover { background-color:#eeeeee; } 
+ul.pseudo-select li ul li:hover { background-color:#e7e7e7; } 
+ul.pseudo-select li.selected {background-color: #eeeeff; }
+ul.pseudo-select li.selected ul li:hover { background-color:#e7e7e7; } 
+
+
+.dropdown .caret { margin-left:12px; } 
+
