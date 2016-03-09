@@ -31,11 +31,9 @@ ai: install
 
 air: ai
 
-
 install_tinymce4:
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
-	( test -d $(QLIB)/j/tinymce4/js/tinymce || $(SUDO) mkdir -p $(QLIB)/j/tinymce4/js/tinymce)
-	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_4.3.7.zip && unzip -qo /tmp/tmce4.zip -d /tmp && cd /tmp/tinymce && find . -type f -exec $(SUDO) install $(INSTALLOPT) {} $(QLIB)/j/tinymce4/{} \; )
+	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_4.3.7.zip && unzip -qo /tmp/tmce4.zip -d /tmp && cd /tmp/tinymce && find . -type f -exec $(SUDO) install -D $(INSTALLOPT) {} $(QLIB)/j/tinymce4/{} \; )
 	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 
