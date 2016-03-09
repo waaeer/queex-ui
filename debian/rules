@@ -4,7 +4,7 @@ export DH_VERBOSE=1
 %:
 	dh $@
 
-override_dh_auto_build:
-	make install_all SUDO= PREFIX=`pwd`/build/queex
+override_dh_auto_install:
+	make install_all SUDO= PREFIX=`pwd`/debian/queex-ui/queex
 
 
