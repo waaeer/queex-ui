@@ -1,6 +1,6 @@
 PREFIX ?=/usr/share/queex
 SUDO ?= sudo
-INSTALLOPT=$(if $(SUDO), "-g devel -m 0664" ,"-m 0644")
+INSTALLOPT=$(if $(SUDO), "-gdevel -m0664" ,"-m0644")
 QLIB=$(PREFIX)/htdocs/lib
 QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
