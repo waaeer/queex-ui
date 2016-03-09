@@ -1,6 +1,6 @@
 PREFIX ?=/usr/share/queex
 SUDO ?= sudo
-INSTALLOPT=$(if $(SUDO), "-gdevel -m0664" ,"-m0644")
+INSTALLOPT=$(if $(SUDO), "-grout=devel --mode=0664" ,"--mode=0644")
 QLIB=$(PREFIX)/htdocs/lib
 QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
@@ -42,7 +42,7 @@ install_bootstrap3:
 	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QLIB)/j/bootstrap && $(SUDO) chown :devel $(QLIB)/j/bootstrap; fi )
 	( rm -rf /tmp/bootstrap-$(BOOTSTRAP)-dist* /tmp/dist)
 	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP)/bootstrap-$(BOOTSTRAP)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP)-dist.zip -d /tmp && cd /tmp/bootstrap-$(BOOTSTRAP)-dist && find . -type f -exec $(SUDO) install $(INSTALL_OPT) -D {} $(QLIB)/j/bootstrap/{} \; )
-	( rm -rf /tmp/bootstrap-$(BOOTSTRAP)-dist* )
+#	( rm -rf /tmp/bootstrap-$(BOOTSTRAP)-dist* )
 
 install_jstools:
 	( if [ ! -d /tmp/jstools-qui ]; then mkdir /tmp/jstools-qui; fi )
