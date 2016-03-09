@@ -91,10 +91,12 @@ install_tinymce_youtube:
 
 
 install_templates:
-	( if [ ! -d "$(QUI-CTPP)" ]; then ($(SUDO) mkdir -p $(QUI-CTPP) && $(SUDO) chmod g+w $(QUI-CTPP) && $(SUDO) chown :devel $(QUI-CTPP)); fi )
-	( cd ctpp; for file in `find . -type f`; do $(SUDO) $(INSTALLOPT) -D $$file $(QUI-CTPP)/$$file; done; )
+	( if [ ! -d "$(QUI-CTPP)" ]; then $(SUDO) mkdir -p $(QUI-CTPP) ; fi) 
+	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QUI-CTPP) && $(SUDO) chown :devel $(QUI-CTPP); fi )
+	( cd ctpp; for file in `find . -type f`; do $(SUDO) install $(INSTALLOPT) -D $$file $(QUI-CTPP)/$$file; done; )
 
 install_static:
-	( if [ ! -d "$(QUI-HTDOCS)" ]; then ($(SUDO) mkdir -p $(QUI-HTDOCS) && $(SUDO) chmod g+w $(QUI-HTDOCS) && $(SUDO) chown :devel $(QUI-HTDOCS)); fi)
-	( cd htdocs; for file in `find . -type f `; do $(SUDO) $(INSTALLOPT) -D $$file $(QUI-HTDOCS)/$$file; done; )
+	( if [ ! -d "$(QUI-HTDOCS)" ]; then $(SUDO) mkdir -p $(QUI-HTDOCS) ; fi)
+	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QUI-HTDOCS) && $(SUDO) chown :devel $(QUI-HTDOCS); fi )
+	( cd htdocs; for file in `find . -type f `; do $(SUDO) install $(INSTALLOPT) -D $$file $(QUI-HTDOCS)/$$file; done; )
 
