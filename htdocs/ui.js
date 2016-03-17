@@ -691,7 +691,7 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 		var btn = this.btn;
 		this.menu.find('li[data-id]').each(function() { 
 			if (this.getAttribute('data-id')==v) { 
-				btn.find('span.selected-option-text').html( $(this).addClass('selected').html() );
+				btn.find('span.selected-option-text').html( $(this).addClass('selected').find('label').html() );
 				is_set = true;
 			} else {
 				$(this).removeClass('selected'); 
