@@ -46,7 +46,10 @@ if(!window.qwx) { window.qwx = {} }
 ' <div class="modal-dialog" style="width:' + width + ';"><div class="modal-content"><div class="modal-header">' + 
 '		 <h4 class="modal-title"></h4></div><div class="modal-body"></div><div class="modal-footer">' + 
 (option && option.okButton ? 
-'		 <button type="button" style="float: left;" class="btn ' + (option.okButtonClass || 'btn-primary') + ' btn-save">' + option.okButton + '</button>' : ''
+'		 <button type="button" style="float: left;" class="btn ' + (option.okButtonClass || 'btn-primary') + ' btn-save">' + option.okButton + '</button>' : 
+ ( option && option.okButtons ? _.map(option.okButtons, function(x) { return '<button type="button" style="float: left;" class="btn ' +  (_.escape(x.btnClass) || 'btn-primary btn-save') + '">' + x.label + '</button>'} ).join(' ')
+   : ''
+ )
 ) + 
 '        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>' +
 '      </div></div></div></div>'
