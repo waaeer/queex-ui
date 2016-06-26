@@ -6,7 +6,7 @@ QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
 
 BOOTSTRAP=3.3.6
-TINYMCE=4.3.7
+TINYMCE=4.3.13
 JQUERY=1.12.1
 BOOTSTRAP_DP=1.5.1
 SPRINTF_JS=1.0.3
@@ -20,7 +20,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4 install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube 
+install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube 
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
@@ -31,9 +31,28 @@ ai: install
 
 air: ai
 
+
+## needs node.js to patch and rebuid tinymce (to add languages highlighting)
+## sudo apt-get install nodejs
+## sudo npm i -g grunt-cli
+## npm i 
+######
+
+install_tinymce4_patched:
+	( cp etc/codesample.patch /tmp )
+	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
+	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_$(TINYMCE)_dev.zip && unzip -qo /tmp/tmce4.zip -d /tmp )
+	( cd /tmp/tinymce && patch -p1 < /tmp/codesample.patch )
+	perl -MFile::Slurp -i -e 'my $$g=File::Slurp::read_file("htdocs/prism.js"); my $$s=0; while(<>) { if($$s==0) { if(/Start wrap/) { $$s=1; } print $$_; } elsif ($$s==1) { if(/End wrap/) { $$s=2;print "$$g\n$$_"; }} else { print $$_; }}' /tmp/tinymce/js/tinymce/plugins/codesample/classes/Prism.js
+	( cd /tmp/tinymce && npm i && grunt && cd tmp && unzip tinymce_$(TINYMCE).zip )
+	( cd /tmp/tinymce/tmp/tinymce && find . -type f -exec sudo install -m 664 -g devel -D {} $(QLIB)/j/tinymce4/{} \; )
+	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
+	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
+
 install_tinymce4:
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
-	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_4.3.7.zip && unzip -qo /tmp/tmce4.zip -d /tmp && cd /tmp/tinymce && find . -type f -exec $(SUDO) install -D $(INSTALLOPT) {} $(QLIB)/j/tinymce4/{} \; )
+	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_$(TINYMCE).zip && unzip -qo /tmp/tmce4.zip -d /tmp )
+	( cd /tmp/tinymce && find . -type f -exec sudo install -m 664 -g devel -D {} $(QLIB)/j/tinymce4/{} \; )
 	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 

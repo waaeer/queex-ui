@@ -1,0 +1,76 @@
+--- tinymce/js/tinymce/plugins/codesample/classes/Dialog.js	2016-06-08 22:16:30.000000000 +0300
++++ tinymce.new/js/tinymce/plugins/codesample/classes/Dialog.js	2016-06-27 01:31:14.891059807 +0300
+@@ -27,21 +27,28 @@
+ 		{text: 'CSS', value: 'css'},
+ 		{text: 'PHP', value: 'php'},
+ 		{text: 'Ruby', value: 'ruby'},
++		{text: 'Perl', value: 'perl'},
+ 		{text: 'Python', value: 'python'},
+ 		{text: 'Java', value: 'java'},
++		{text: 'JSON', value: 'json'},
++		{text: 'Markdown', value: 'markdown'},
++		{text: 'Makefile', value: 'makefile'},
+ 		{text: 'C', value: 'c'},
+ 		{text: 'C#', value: 'csharp'},
+-		{text: 'C++', value: 'cpp'}
++		{text: 'C++', value: 'cpp'},
++		{text: 'SQL', value: 'sql'},
++		{text: 'Bash', value: 'bash'},
++		{text: 'LaTeX', value: 'latex'}
+ 	];
+ 
+-	function insertCodeSample(editor, language, code) {
++	function insertCodeSample(editor, language, code, numeration) {
+ 		editor.undoManager.transact(function() {
+ 			var node = getSelectedCodeSample(editor);
+ 
+ 			code = DOM.encode(code);
+ 
+ 			if (node) {
+-				editor.dom.setAttrib(node, 'class', 'language-' + language);
++				editor.dom.setAttrib(node, 'class', 'language-' + language + (numeration ? ' line-numbers' : ''));
+ 				node.innerHTML = code;
+ 				Prism.highlightElement(node);
+ 				editor.selection.select(node);
+@@ -83,6 +90,14 @@
+ 		return '';
+ 	}
+ 
++	function getLineNumeration(editor) {
++		var node = getSelectedCodeSample(editor);
++		if (node) {
++			return node.className.match(/line-numbers/);
++		}
++		return false;
++	}
++
+ 	return {
+ 		open: function(editor) {
+ 			editor.windowManager.open({
+@@ -99,6 +114,13 @@
+ 						value: getCurrentLanguage(editor),
+ 						values: languages
+ 					},
++					{
++						type: 'checkbox',
++						name: 'numeration',
++						label: 'Line numbers',
++						maxWidth: 200,
++						value: getLineNumeration(editor)
++					},
+ 
+ 					{
+ 						type: 'textbox',
+@@ -114,9 +136,9 @@
+ 					}
+ 				],
+ 				onSubmit: function(e) {
+-					insertCodeSample(editor, e.data.language, e.data.code);
++					insertCodeSample(editor, e.data.language, e.data.code, e.data.numeration == 1);
+ 				}
+ 			});
+ 		}
+ 	};
+-});
+\ В конце файла нет новой строки
++});
