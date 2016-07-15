@@ -11,8 +11,7 @@ JQUERY=1.12.4
 BOOTSTRAP_DP=1.5.1
 SPRINTF_JS=1.0.3
 SNAP=0.4.1
-
-
+VIEWERJS=0.5.8
 
 all:
 
@@ -20,7 +19,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube 
+install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
@@ -105,7 +104,9 @@ install_tinymce_youtube:
 #	( if [ ! -d $(QLIB)/j/tinymce4/js/tinymce/plugins/youtube/ ]; then $(SUDO) mkdir $(QLIB)/j/tinymce4/js/tinymce/plugins/youtube/; fi )
 	(cd /tmp/tmyout/ && find youtube -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/tinymce4/js/tinymce/plugins/{} \; )
 
-
+install_viewer_js:
+	(cd /tmp &&	wget -c http://viewerjs.org/releases/viewerjs-$(VIEWERJS).zip && unzip viewerjs-$(VIEWERJS).zip)
+	(cd /tmp/viewerjs-$(VIEWERJS) && find ViewerJS -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/{} \; ) 
 
 install_templates:
 	( if [ ! -d "$(QUI-CTPP)" ]; then $(SUDO) mkdir -p $(QUI-CTPP) ; fi) 
