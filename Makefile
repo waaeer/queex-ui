@@ -6,7 +6,7 @@ QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
 
 BOOTSTRAP=3.3.6
-TINYMCE=4.3.13
+TINYMCE=4.4.0
 JQUERY=1.12.4
 BOOTSTRAP_DP=1.5.1
 SPRINTF_JS=1.0.3
@@ -42,6 +42,7 @@ install_tinymce4_patched:
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_$(TINYMCE)_dev.zip && unzip -qo /tmp/tmce4.zip -d /tmp )
 	( cd /tmp/tinymce && patch -p1 < /tmp/codesample.patch )
+	# заменим ту версию prism.js что включена в tinymce на нашу, с более реалистичным списком поддерживаемых языков
 	perl -MFile::Slurp -i -e 'my $$g=File::Slurp::read_file("htdocs/prism.js"); my $$s=0; while(<>) { if($$s==0) { if(/Start wrap/) { $$s=1; } print $$_; } elsif ($$s==1) { if(/End wrap/) { $$s=2;print "$$g\n$$_"; }} else { print $$_; }}' /tmp/tinymce/js/tinymce/plugins/codesample/classes/Prism.js
 	( cd /tmp/tinymce && npm i && grunt && cd tmp && unzip tinymce_$(TINYMCE).zip )
 	( cd /tmp/tinymce/tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce4/{} \; )
@@ -54,7 +55,7 @@ install_tinymce4:
 	( cd /tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce4/{} \; )
 	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
-
+	
 install_bootstrap3:
 	( if [ ! -d "$(QLIB)/j/bootstrap" ]; then $(SUDO) mkdir $(QLIB)/j/bootstrap ; fi )
 	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QLIB)/j/bootstrap && $(SUDO) chown :devel $(QLIB)/j/bootstrap; fi )
@@ -67,13 +68,16 @@ install_jstools:
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js http://underscorejs.org/underscore-min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/json2.js	https://raw.github.com/douglascrockford/JSON-js/master/json2.js)
-	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-4.6.3.zip && unzip -d /tmp/jstools-qui /tmp/fa.zip)
+	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-4.6.3.zip && unzip -o -d /tmp/jstools-qui /tmp/fa.zip)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js  https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.min.js)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.js      https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js    https://raw.githubusercontent.com/waaeer/typeahead.js/wao/dist/typeahead.jquery.min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.js        https://raw.githubusercontent.com/waaeer/typeahead.js/wao/dist/typeahead.jquery.js)
-	(wget -c  -O /tmp/jstools-qui/jquery-sortable.js http://johnny.github.io/jquery-sortable/js/jquery-sortable.js )
-
+	(wget -c -O /tmp/jstools-qui/jquery-sortable.js http://johnny.github.io/jquery-sortable/js/jquery-sortable.js )
+#	(wget -c -O /tmp/gridrotator.zip http://tympanus.net/Development/AnimatedResponsiveImageGrid/AnimatedResponsiveImageGrid.zip && cd /tmp && unzip -o gridrotator.zip && cd  AnimatedResponsiveImageGrid/js/ && cp jquery.gridrotator.js modernizr.custom.26633.js /tmp/jstools-qui && cp ../css/style.css /tmp/jstools-qui/gridrotator.css)
+	(cd /tmp && rm -rf Gallery jstools-qui/blueimp-gallery/ && mkdir jstools-qui/blueimp-gallery/ && git clone https://github.com/blueimp/Gallery.git && cd Gallery && cp -r img css js /tmp/jstools-qui/blueimp-gallery/ )
+#	(cd /tmp && rm -rf Bootstrap-Image-Gallery && git clone https://github.com/blueimp/Bootstrap-Image-Gallery.git && cd Bootstrap-Image-Gallery && cp js/bootstrap-image-gallery.min.js css/bootstrap-image-gallery.min.css  /tmp/jstools-qui/)
+	
 	(cd /tmp/jstools-qui && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
 	(rm -rf /tmp/jstools-qui)
 
