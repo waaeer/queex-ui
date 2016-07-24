@@ -44,7 +44,7 @@ install_tinymce4_patched:
 	( cd /tmp/tinymce && patch -p1 < /tmp/codesample.patch )
 	# заменим ту версию prism.js что включена в tinymce на нашу, с более реалистичным списком поддерживаемых языков
 	perl -MFile::Slurp -i -e 'my $$g=File::Slurp::read_file("htdocs/prism.js"); my $$s=0; while(<>) { if($$s==0) { if(/Start wrap/) { $$s=1; } print $$_; } elsif ($$s==1) { if(/End wrap/) { $$s=2;print "$$g\n$$_"; }} else { print $$_; }}' /tmp/tinymce/js/tinymce/plugins/codesample/classes/Prism.js
-	( cd /tmp/tinymce && npm i && grunt && cd tmp && unzip tinymce_$(TINYMCE).zip )
+	( cd /tmp/tinymce && export PATH=$$PATH:/usr/local/bin; npm i && grunt && cd tmp && unzip tinymce_$(TINYMCE).zip )
 	( cd /tmp/tinymce/tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce4/{} \; )
 	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
