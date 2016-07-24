@@ -19,7 +19,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js
+install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js 
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
