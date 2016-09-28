@@ -355,14 +355,27 @@ window.qwx.checkBoxWrapper.prototype.on = function(evtype,hdlr) {
 	}
 }
 
+window.qwx.widget = function(place,opt) { 
+	if(!opt) console.log('qwxWidget call without options');
+	this.place   = place;
+	this.api     = opt.api     || '/user/api';
+	console.log('in widget constructor');
+	var self = this;
+	this.apiCall = opt.apiCall || function(method, args, block, cb) { 
+		qwx.ajax({
+			url:     self.api + '/' + method,
+			data:    args,
+			block:   block,
+			success: cb
+		});
+	}
+};
 
 window.qwx.list = function(place,opt) { 
-	if(!opt) console.log('qwxList call without options');
-	this.place			= place;
+	qwx.widget.call(this, place, opt);
 	this.pager_place	= opt.pager_place;
 	this.cid			= opt.cid;
 	this.query			= opt.query          || {};
-	this.api			= opt.api            || '/user/api';
 	this.apiMethod      = opt.apiMethod      || 'mget';
 	this.row_template 	= opt.row_template   || '#row_template';
 	this.pager_template = opt.pager_template || '#pager_template';
@@ -414,13 +427,17 @@ window.qwx.list = function(place,opt) {
 	this.displayList(args.arg(page_arg), this.json2filter(args.arg(filter_arg)), true);	
 
 }
+
+window.qwx.list.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.list.prototype.constructor = window.qwx.list;
+
 window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) { 
 	var self = this;
 	return new qwx.editDialog(obj_id, _.extend({
-		cid: this.cid,
-		api: this.api,
+		cid      : this.cid,
+		apiCall  : this.apiCall,
 		getAfterSave: 1,
-		template: '#edit_dialog_template',
+		template : '#edit_dialog_template',
 		data_prepare_view_opt: this.data_prepare_opt,
 		afterSave: function(o) { 
 			if(success_cb) {
@@ -445,7 +462,7 @@ window.qwx.list.prototype.getData = function (page,filter,cb) {
 	if(query.__dont_get_data) { 
 		cb({list:[],n:0});
 	} else { 
-		qwx.ajax({url: this.api +  '/' + this.apiMethod, data: [ this.cid, query, page, this.page_size, this.data_prepare_opt ], success: cb});			
+		this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, cb);			
 	}
 }	
 
@@ -551,18 +568,16 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 	el.find('[role=deleteButton]').on('click', function(e) {
 		e.stopPropagation();
 		if(confirm(self.remove.question || 'Delete object?')) { 
-			qwx.ajax({
-				url: self.api + '/delete', data: [self.cid, obj.id],  block: { message: this.remove.message ||'Deleting...' },
-				success: function() { 
-					el.addClass('deleted-row');
-					el.slideUp();
-					if(self.postDeleteRow) self.postDeleteRow(el);
-					self.place.trigger('afterDeleteRow', { el: el, list: self });
-					return true;
-				}
-			});
+			self.apiCall ('delete', [self.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
+				el.addClass('deleted-row');
+				el.slideUp();
+				if(self.postDeleteRow) self.postDeleteRow(el);
+				self.place.trigger('afterDeleteRow', { el: el, list: self });
+				return true;
+			}); 	
 		}
 	});
+
 };
 
 
@@ -604,8 +619,7 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 }(jQuery);
 
 window.qwx.selectWidget = function(place,opt) { 
-	if(!opt) console.log('qwxselectWidget call without options');
-	this.place			= place;
+	qwx.widget.call(this, place, opt);
 	place.attr('role','widget');
 	var sel;
 	var val = opt.val;
@@ -625,6 +639,9 @@ window.qwx.selectWidget = function(place,opt) {
 		});
 	}
 };
+window.qwx.selectWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.selectWidget.prototype.constructor = window.qwx.selectWidget;
+
 window.qwx.selectWidget.prototype.val = function() { 
 	if(arguments.length==1) {
 		var v = arguments[0];
@@ -652,8 +669,7 @@ window.qwx.selectWidget.prototype.val = function() {
 }(jQuery);
 
 window.qwx.pseudoSelectWidget = function(place,opt) { 
-	if(!opt) console.log('qwxpseudoselectWidget call without options');
-	this.place			= place;
+	qwx.widget.call(this, place, opt);
 	place.attr('role','widget');
 	var sel;
 	var val = opt.val;
@@ -685,6 +701,9 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	});
 
 };
+window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.pseudoSelectWidget.prototype.constructor = window.qwx.pseudoSelectWidget;
+
 window.qwx.pseudoSelectWidget.prototype.val = function() { 
 	if(arguments.length==1) {
 		var v = arguments[0];
@@ -723,8 +742,7 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 }(jQuery);
 
 window.qwx.autocompleteWidget = function(place,opt) { 
-	if(!opt) console.log('qwxautocompleteWidget call without options');
-	this.place			= place;
+	qwx.widget.call(this, place, opt); 
 	var val = opt.val;
 	this.onSelect   = opt.onSelect;
 	this.displayKey = opt.displayKey;
@@ -790,11 +808,10 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		place.attr('data-value', '');
 		if(opt.onQueryChanged) opt.onQueryChanged(d);
 	});
-
-
-
-
 }
+window.qwx.autocompleteWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.autocompleteWidget.prototype.constructor = window.qwx.autocompleteWidget;
+
 window.qwx.autocompleteWidget.prototype.val = function() { 
 	if(arguments.length==0) { 
 		return this.place.attr('data-value');
@@ -826,7 +843,7 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 
 
 window.qwx.labelsWidget = function(place, opt) { 
-	this.place 	= place;
+	qwx.widget.call(this, place, opt); 
 	var val     = opt.val;
 	this.label_fld = opt.label_fld || 'title';
 	this.val(val);
@@ -838,6 +855,9 @@ window.qwx.labelsWidget = function(place, opt) {
 	});
 
 }
+window.qwx.labelsWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.labelsWidget.prototype.constructor = window.qwx.labelsWidget;
+
 window.qwx.labelsWidget.prototype.addValue = function(id,text) { 
 	var item = $('<div class="labels-item"/>').attr('data-id',id) .appendTo(this.place);
 	$('<span class="labels-item-delete glyphicon glyphicon-remove"/>').on('click',function() { item.fadeOut(400, function() {item.remove();} ); } ).appendTo(item);
@@ -887,6 +907,7 @@ window.qwx.checkbox = function(name,value) {
 };
 
 window.qwx.imageWidget = function(place, opt) { 
+	qwx.widget.call(this, place, opt);
 	var name      = this.name      = opt.name;
 	var uploadURI = this.uploadURI = opt.uploadURI;
 	this.fsRoot   = opt.fsRoot;
@@ -897,12 +918,11 @@ window.qwx.imageWidget = function(place, opt) {
 	btn.on('postUpload', function(event, data) {
 		btn.parent().find('.imgplace').html('').append($('<img/>').attr({ src:opt.uploadURI + data.path }));
 	});
-	this.place = place;
 	place.attr('role','widget');
-
-
-
 };
+window.qwx.imageWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.imageWidget.prototype.constructor = window.qwx.imageWidget;
+
 window.qwx.imageWidget.prototype.val = function() { 
 	if(arguments.length==0) {	
 		var f = $('input[role=f]', this.place);
@@ -938,7 +958,7 @@ window.qwx.imageWidget.prototype.val = function() {
 }(jQuery);
 
 window.qwx.editDialog = function (id, opt) { 
-	this.api = opt.api || '/user/api';
+	qwx.widget.call(this, null, opt);
 	this.cid = opt.cid;
 	this.data_prepare_opt = opt.data_prepare_opt;
 	this.data_prepare_view_opt = opt.data_prepare_view_opt || opt.data_prepare_opt;
@@ -976,9 +996,9 @@ window.qwx.editDialog = function (id, opt) {
 		});
 	}
 	if(id) { 
-		qwx.ajax({url: this.api + "/get", data: [ this.cid, id, this.data_prepare_opt], success: function(r) { 
+		this.apiCall('get', [ this.cid, id, this.data_prepare_opt], null, function(r) { 
 			openModal(r.obj);				
-		}});
+		});
 	} else { 	
 		openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})));
 	}		
@@ -1006,17 +1026,16 @@ window.qwx.editDialog = function (id, opt) {
 			
 		if (self.collectData) self.collectData(form, attr, ops);
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push(['get', self.cid, id, self.data_prepare_view_opt ]);
-		qwx.ajax({url: this.api + "/txn" , block: { message: self.saveMessage || 'Saving...' },
-			data: ops,
-			success: function(r) {
+		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
 				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
 				form.closest('.modal').modal('hide');
 				return true;
-			}
 		});
 	};
 	return false;
 };
+window.qwx.editDialog.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.editDialog.prototype.constructor = window.qwx.editDialog;
 window.qwx.editDialog.prototype.close = function() { 
 		this.modal.modal('hide');
 }
