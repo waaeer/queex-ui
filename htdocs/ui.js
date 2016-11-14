@@ -9,7 +9,7 @@ if(!window.qwx) { window.qwx = {} }
 			$(this).find('[autofocus]').focus();
 			var prev = modalStack.length == 1 ? null : modalStack[modalStack.length-2];
 			if(prev) { 
-				var kdwh = $._data(prev[0], "events").keydown;
+				var kdwh = $.data(prev[0], "events").keydown;
 				if(kdwh) { 
 					x.data('prev_keyha', kdwh[0].handler );
 					prev.off('keydown.dismiss.bs.modal');
