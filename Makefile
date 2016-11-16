@@ -68,7 +68,7 @@ install_jstools:
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js http://underscorejs.org/underscore-min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/json2.js	https://raw.github.com/douglascrockford/JSON-js/master/json2.js)
-	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-4.6.3.zip && unzip -o -d /tmp/jstools-qui /tmp/fa.zip)
+	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-4.7.0.zip && unzip -o -d /tmp/jstools-qui /tmp/fa.zip)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js  https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.min.js)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.js      https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js    https://raw.githubusercontent.com/waaeer/typeahead.js/wao/dist/typeahead.jquery.min.js)
