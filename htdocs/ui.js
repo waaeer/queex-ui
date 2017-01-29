@@ -893,7 +893,7 @@ window.qwx.labelsWidget = function(place, opt) {
 				addplace.css('width', width + 'px');
 			});
 			self.labelplace.trigger('resize');
-			$(window).on('resize', function() { self.labelplace.trigger('resize'); } ); 
+			$(window).on('resize', function() { self.labelplace.trigger('resize'); } ); // toDo: remove this handler in destructor
 		}
 	 	if(w) { 
 			w.place.on('change', function(ev,val) { 
