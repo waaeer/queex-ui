@@ -886,11 +886,12 @@ window.qwx.labelsWidget = function(place, opt) {
 				}
 			});
 			w = addplace.qwxAutocompleteWidget('widget');
-			self.labelplace.on('resize', function() { 
+			self.labelplace.on('resize', function(ev) { 
 				addplace.css('width', 0);
-				var width = self.labelplace.width() - addplace.position().left - 3;
+				var width = parseInt(self.labelplace.width() - addplace.position().left - 4);
 				if(width < 30) { width = 100; }
 				addplace.css('width', width + 'px');
+				ev.stopPropagation();
 			});
 			self.labelplace.trigger('resize');
 			$(window).on('resize', function() { self.labelplace.trigger('resize'); } ); // toDo: remove this handler in destructor
@@ -993,6 +994,8 @@ window.qwx.labelsWidget.prototype.val = function() {
 				setVals(val);
 			}
 			
+		} else { 
+			if(cb) cb();
 		}
 	}
 		
