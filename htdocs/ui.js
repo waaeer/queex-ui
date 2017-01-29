@@ -359,7 +359,6 @@ window.qwx.widget = function(place,opt) {
 	if(!opt) console.log('qwxWidget call without options');
 	this.place   = place;
 	this.api     = opt.api     || '/user/api';
-	console.log('in widget constructor');
 	var self = this;
 	this.apiCall = opt.apiCall || function(method, args, block, cb) { 
 		qwx.ajax({
