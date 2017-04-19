@@ -776,6 +776,10 @@ window.qwx.autocompleteWidget = function(place,opt) {
 	var state = this.state = null;
 	var before;
 		
+	place.find('input.tt-input').on('change', function(ev) { 
+		ev.stopPropagation(); 
+		return true; 
+	});
 	sel.on('typeahead:autocomplete', function(e,d,s,x) { 
 	});
 	sel.on('typeahead:active', function(e,d,s,x) { 
@@ -873,10 +877,12 @@ window.qwx.labelsWidget = function(place, opt) {
 				url: opt.autocompleteURL,
 				hint: false,
 				preprocessList: function(value, list) {
-					if(!_.some(list, function(x) { return(x[self.label_fld]==value); })) { 
-						var newl = {id:'__new__' + _.uniqueId('label_new_'), __label: value, isNew: true};
-						newl [ self.label_fld ] = 'Новая метка: ' + value; 				
-						list.push(newl);
+					if(opt.canCreateNew) { 
+						if(!_.some(list, function(x) { return(x[self.label_fld]==value); })) { 
+							var newl = {id:'__new__' + _.uniqueId('label_new_'), __label: value, isNew: true};
+							newl [ self.label_fld ] = 'Новая метка: ' + value; 				
+							list.push(newl);
+						}
 					}
 
 					var already_selected = self.val(), isSelected = {}, newlist = [];
