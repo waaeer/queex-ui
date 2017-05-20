@@ -827,11 +827,10 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 		return this.place.attr('data-value');
 	} else { 
 		var o = arguments[0];
-		this.place.attr('data-value', o ? o.id : null); 
 		this.inp.val(o ? (this.displayKey ? (_.isFunction(this.displayKey) ? this.displayKey(o) : o[this.displayKey] ) : o.title) : '');
 		this.inp.typeahead('val', o ? (this.displayKey ? (_.isFunction(this.displayKey) ? this.displayKey(o) : o[this.displayKey] ) : o.title) : '');
 		this.inp.addClass('autocomplete-ok');
-
+		this.place.attr('data-value', o ? o.id : null); 
 		if(this.onSelect) this.onSelect(o);
 	}
 };
