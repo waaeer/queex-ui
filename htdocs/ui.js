@@ -753,6 +753,7 @@ window.qwx.autocompleteWidget = function(place,opt) {
 	sel.typeahead({
 		minLength: (opt.minLength || 1), 
 		highlight: true, 
+		hint: (opt.hint ===null ? true: opt.hint)
 		// updater: function (item) {
 		 /* do whatever you want with the selected item */
 		// 	alert("selected "+item);
@@ -763,6 +764,7 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		limit: (opt.limit || 5),
 		source: function(q,sync_cb,async_cb) { 
 			qwx.ajax({url: opt.url , data: [ q ], success: function(r) { 
+				if(opt.preprocessList) { r.list = opt.preprocessList(q, r.list); }
 				async_cb(r.list);
 			}});
 		},
@@ -774,18 +776,19 @@ window.qwx.autocompleteWidget = function(place,opt) {
 	var state = this.state = null;
 	var before;
 		
+	place.find('input.tt-input').on('change', function(ev) { 
+		ev.stopPropagation(); 
+		return true; 
+	});
 	sel.on('typeahead:autocomplete', function(e,d,s,x) { 
-//		console.log('aa e=',e, 'd=',d, ' s=',s, 'x=',x);
 	});
 	sel.on('typeahead:active', function(e,d,s,x) { 
 		state = 'working';
 		before = [sel.attr('class'), place.attr('data-value'), sel.val()];
 		if(opt.onActivate) opt.onActivate();
-//		console.log('active val=',sel,sel.val());
 	});
 
 	sel.on('typeahead:close', function(e,d,s,x) { 
-//		console.log('close e=',e, 'd=',d, ' s=',s, 'x=',x);
 		if(state != 'selected') { 
 			sel.attr('class', before[0]);
 			sel.val(before[2]);
@@ -795,15 +798,22 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		this.state = '';
 	});
 
+	sel.on('typeahead:change', function(e,d,s,x) { 
+	});
+
+	sel.on('change', function(e,d,s,x) { 
+
+	});
+
 	sel.on('typeahead:select', function(e,d) { 
 		state = 'selected';
 		sel.removeClass('autocomplete-bad').addClass('autocomplete-ok');
 		place.attr('data-value', d.id);
 		if(opt.onSelect) opt.onSelect(d);
+		place.trigger('change', d);
 	});
 	sel.on('typeahead:querychange', function(e,d,s,x) { 	
 		state = 'working';
-//console.log('querychange');
 		sel.removeClass('autocomplete-ok').addClass('autocomplete-bad');
 		place.attr('data-value', '');
 		if(opt.onQueryChanged) opt.onQueryChanged(d);
@@ -817,17 +827,24 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 		return this.place.attr('data-value');
 	} else { 
 		var o = arguments[0];
-		this.place.attr('data-value', o ? o.id : null); 
 		this.inp.val(o ? (this.displayKey ? (_.isFunction(this.displayKey) ? this.displayKey(o) : o[this.displayKey] ) : o.title) : '');
+		this.inp.typeahead('val', o ? (this.displayKey ? (_.isFunction(this.displayKey) ? this.displayKey(o) : o[this.displayKey] ) : o.title) : '');
 		this.inp.addClass('autocomplete-ok');
+		this.place.attr('data-value', o ? o.id : null); 
 		if(this.onSelect) this.onSelect(o);
 	}
 };
+window.qwx.autocompleteWidget.prototype.close = function() { 
+	this.inp.typeahead('close');
+};
+
+
 
 +function($) { 
 	$.fn.qwxAutocompleteWidget = function(option) { 
 		if(!option || typeof(option) == 'object') { 
-			this.data('widget', new qwx.autocompleteWidget(this, option));
+			var w = new qwx.autocompleteWidget(this, option);
+			this.data('widget', w);
 		} else {
 			var w = this.data('widget');
 			if (option == 'val') {		
@@ -845,36 +862,146 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 window.qwx.labelsWidget = function(place, opt) { 
 	qwx.widget.call(this, place, opt); 
 	var val     = opt.val;
+	this.cid    = opt.cid;
 	this.label_fld = opt.label_fld || 'title';
-	this.val(val);
 	var w = this.addWidget = opt.addWidget;
 	var self = this;
-	w.place.on('change', function(ev,val) { 
-		if(val) self.addValue(val.id, val.text);
-		w.val(null);
-	});
+	this.labelplace = $('<div class="labels-list"/>').css('position','relative').appendTo(place.html(''));
+	this.val(val, function() { 
+    	if(w && w == 'embedded') { 
+	    	var addplace = self.embeddedAutocomplete = $('<span class="labels-list-add" style="display: inline-block;"/>').appendTo(self.labelplace);
+		    addplace.qwxAutocompleteWidget({
+				displayKey: self.label_fld, 
+		    	name: _.uniqueId('labelplace_'),
+				url: opt.autocompleteURL,
+				hint: false,
+				preprocessList: function(value, list) {
+					if(opt.canCreateNew) { 
+						if(!_.some(list, function(x) { return(x[self.label_fld]==value); })) { 
+							var newl = {id:'__new__' + _.uniqueId('label_new_'), __label: value, isNew: true};
+							newl [ self.label_fld ] = 'Новая метка: ' + value; 				
+							list.push(newl);
+						}
+					}
 
+					var already_selected = self.val(), isSelected = {}, newlist = [];
+					for(var i=0,l=already_selected.length;i<l;i++) isSelected[already_selected[i]] = true;
+					for(var i=0,l=list.length;i<l;i++) if(!isSelected[list[i].id]) newlist.push(list[i]);
+					return newlist;
+				}
+			});
+			w = addplace.qwxAutocompleteWidget('widget');
+			self.labelplace.on('resize', function(ev) { 
+				addplace.css('width', 0);
+				var width = parseInt(self.labelplace.width() - addplace.position().left - 4);
+				if(width < 30) { width = 100; }
+				addplace.css('width', width + 'px');
+				ev.stopPropagation();
+			});
+			self.labelplace.trigger('resize');
+			$(window).on('resize', function() { self.labelplace.trigger('resize'); } ); // toDo: remove this handler in destructor
+		}
+	 	if(w) { 
+			w.place.on('change', function(ev,val) { 
+				if(val) self.addValue(val.id, val [ val.isNew ?  '__label' : self.label_fld]);
+				w.val(null);	w.close();
+				self.labelplace.trigger('resize');
+			});
+		}
+	});
 }
+
 window.qwx.labelsWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.labelsWidget.prototype.constructor = window.qwx.labelsWidget;
 
 window.qwx.labelsWidget.prototype.addValue = function(id,text) { 
-	var item = $('<div class="labels-item"/>').attr('data-id',id) .appendTo(this.place);
-	$('<span class="labels-item-delete glyphicon glyphicon-remove"/>').on('click',function() { item.fadeOut(400, function() {item.remove();} ); } ).appendTo(item);
+	var item = $('<div class="labels-item"/>').attr('data-id',id) ;
+	if(this.embeddedAutocomplete) item.insertBefore(this.embeddedAutocomplete); else item.appendTo(this.labelplace);
+	var self = this;
+	$('<span class="labels-item-delete glyphicon glyphicon-remove"/>').on('click',function() { 
+		item.fadeOut(400, function() {
+			item.remove(); self.labelplace.trigger('resize'); 
+		} ); 
+	}).appendTo(item);
 	item.append(text);
 }
+window.qwx.labelsWidget.prototype.newLabels = function() { 
+	var val = [];
+	var self = this;
+	$('.labels-item',this.labelplace).each(function() { 
+		var id = this.getAttribute('data-id');
+		if(id.match(/^__new__/)) { 
+			var o = { id: id }; 
+			o[self.label_fld] = $(this).text().replace(/^\s+|\s+$/,''); 
+			val.push(o); 
+		}
+	});
+	return val;
+}
+window.qwx.labelsWidget.prototype.labels = function() { 
+	var val = [];
+	var self = this;
+	$('.labels-item',this.labelplace).each(function() { 
+		var id = this.getAttribute('data-id');
+		var o = { id: id }; 
+		if(id.match(/^__new__/)) { 
+			o.isNew = 1;
+		}
+		o[self.label_fld] = $(this).text().replace(/^\s+|\s+$/,''); 
+		val.push(o); 
+	});
+	return val;
+}
 window.qwx.labelsWidget.prototype.val = function() { 
-	var place = this.place;
+	var place = this.labelplace;
 	if(arguments.length==0) { 
 		var val = [];
 		$('.labels-item',place).each(function() { val.push(this.getAttribute('data-id')); });
 		return val;
 	} else { 
 		var val = arguments[0];
+		var cb  = arguments[1];
 		place.html('');
-		if(val) { for(var i=0,l=val.length;i<l;i++) { // todo: check uniqueness
-			this.addValue(val[i].id, val[i][this.label_fld] );
-		}}
+		if(val) { 
+			var dict = {};
+			for(var i=0,l=val.length;i<l;i++) { // todo: check uniqueness
+				if (!_.isObject(val[i])) { 
+					dict[val[i]] = null;
+				}
+			}	
+			var self = this;
+			var setVals = function(arr) { 
+				for(var i=0,l=arr.length;i<l;i++) { // todo: check uniqueness
+					self.addValue(arr[i].id, arr[i][self.label_fld] );
+				}
+				if(cb) cb(); 
+			};
+			if(_.size(dict)>0) { 
+				this.apiCall('mget', [ this.cid, { id: { any: _.keys(dict) } }, 1, null, this.data_prepare_opt ], null, function(r) { 
+					var list = r.list;
+					for(var i=0,l=list.length;i<l;i++) dict[list[i].id] = list[i][self.label_fld];
+					var newval = _.filter(_.map(val, function(item) { 
+						if (!_.isObject(item)) { 
+							if(dict[item]) { 
+								var newitem = {id:item};
+								newitem[ self.label_fld ] = dict[item];
+								return newitem;
+							} else {
+								return null;
+							}
+						} else { 
+							return item;
+						}
+					}), function(item) { return !!item });
+					setVals(newval);					
+				});			
+			} else {
+				setVals(val);
+			}
+			
+		} else { 
+			if(cb) cb();
+		}
 	}
 		
 
@@ -889,6 +1016,10 @@ window.qwx.labelsWidget.prototype.val = function() {
 			var w = this.data('widget');
 			if (option == 'val') {		
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+			} else if (option == 'newLabels') {
+				return w.newLabels();
+			} else if (option == 'labels') {
+				return w.labels();
 			} else if(option == 'widget') { 
 				return w ? w : null;
 			}

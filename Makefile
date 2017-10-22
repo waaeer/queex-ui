@@ -12,6 +12,7 @@ BOOTSTRAP_DP=1.5.1
 SPRINTF_JS=1.0.3
 SNAP=0.4.1
 VIEWERJS=0.5.8
+FONTAWESOME=4.7.0
 
 all:
 
@@ -68,7 +69,7 @@ install_jstools:
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js http://underscorejs.org/underscore-min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/json2.js	https://raw.github.com/douglascrockford/JSON-js/master/json2.js)
-	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-4.7.0.zip && unzip -o -d /tmp/jstools-qui /tmp/fa.zip)
+	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-$(FONTAWESOME).zip && unzip -o -d /tmp/jstools-qui /tmp/fa.zip && cd /tmp/jstools-qui && ln -s font-awesome-$(FONTAWESOME) font-awesome)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js  https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.min.js)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.js      https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js    https://raw.githubusercontent.com/waaeer/typeahead.js/wao/dist/typeahead.jquery.min.js)
@@ -78,8 +79,8 @@ install_jstools:
 	(cd /tmp && rm -rf Gallery jstools-qui/blueimp-gallery/ && mkdir jstools-qui/blueimp-gallery/ && git clone https://github.com/blueimp/Gallery.git && cd Gallery && cp -r img css js /tmp/jstools-qui/blueimp-gallery/ )
 #	(cd /tmp && rm -rf Bootstrap-Image-Gallery && git clone https://github.com/blueimp/Bootstrap-Image-Gallery.git && cd Bootstrap-Image-Gallery && cp js/bootstrap-image-gallery.min.js css/bootstrap-image-gallery.min.css  /tmp/jstools-qui/)
 	
-	(cd /tmp/jstools-qui && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
-	(rm -rf /tmp/jstools-qui)
+	(cd /tmp/jstools-qui && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
+#	(rm -rf /tmp/jstools-qui)
 
 install_bootstrap_datepicker:
 	( if [ ! -d /tmp/bsdp ]; then mkdir /tmp/bsdp; fi )

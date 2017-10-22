@@ -10,19 +10,35 @@
 .modal.error .modal-body {
  	color: #770000;
 }
+.labels-list { 
+	border: solid #777777 1px;
+	border-radius: 1px;
+	padding:2px;
+}
 .labels-item { 
 	display: inline-block; 
 	border: solid #777777 1px;
 	border-radius: 4px;
 	padding: 0px 5px;
-	margin: 0 10px 0 0;
+	margin: 0 10px 1px 0;
+	vertical-align: middle;
 }
 .labels-item:hover { 
 	background-color:#eeeeee;
 }
 .labels-item-delete { 
-	position: relative; top:3px; cursor: pointer;
+	position: relative; top:2px; cursor: pointer;
 }
+.labels-list-add { 
+	position: realtive; top:-1px;
+}
+.labels-list .twitter-typeahead { width: 100%; }
+.labels-list .twitter-typeahead input.tt-input { border: none; margin-bottom:1px;} 
+.twitter-typeahead .tt-selectable { cursor: pointer; } 
+.twitter-typeahead .tt-selectable:hover { background-color: #eeeeee; }
+.twitter-typeahead .tt-menu { background-color: #ffffff; border:1px solid #777777; }
+.twitter-typeahead .tt-cursor { background-color: #eeeeee; } 
+
 ul.pseudo-select li { cursor: pointer; padding: 2px 4px; } 
 ul.pseudo-select li.label { cursor: pointer; }
 ul.pseudo-select li.not-selectable { cursor: defaul; } 
@@ -34,4 +50,5 @@ ul.pseudo-select li.selected ul li:hover { background-color:#e7e7e7; }
 
 
 .dropdown .caret { margin-left:12px; } 
+
 
