@@ -187,14 +187,9 @@ if(!window.qwx) { window.qwx = {} }
 		args = (args===null) ? cur_args: new qwx.args(args);
 		history.pushState(cur_args.data, name, "?" + args.modify(changeArgs).serialize() );							
 	}
-
-	
 	window.qwx.checkbox_wrap = function(sel, false_null) { 
 		return new qwx.checkBoxWrapper(sel, false_null);		
 	}
-
-
-
 }();
 
 function formatSize(size) { 
@@ -208,9 +203,12 @@ function formatSize(size) {
 		size = 0.01 * parseInt(size * k);
 		return ('' + size).replace(/(\.\d\d)\d+$/, "$1") + u + 'b';
 }
+window.qwx.tr = function(msg) { 
+	return window.tr && window.tr[msg] ? window.tr[msg] : msg;
+}
 window.qwx.ajax = function(opt) { 
 	if(opt.block) { 
-		qwx.messageBox(null, (opt.block.message ? opt.block.message : 'Подождите...'), false, 'wait');
+		qwx.messageBox(null, (opt.block.message ? opt.block.message : qwx.tr('Подождите...')), false, 'wait');
 	}
 	$.ajax({
 		url: opt.url, 
@@ -225,7 +223,7 @@ window.qwx.ajax = function(opt) {
 					} else if(window.ajaxErrorHandler) { 
 						window.ajaxErrorHandler(r);
 					} else { 					// toDo: format error messages of known types
-						qwx.messageBox('Ошибка', r.error, true, 'error');
+						qwx.messageBox(qwx.tr('Ошибка'), r.error, true, 'error');
 					}
 			} else {
 					var rc;
@@ -251,7 +249,7 @@ window.qwx.ajax = function(opt) {
 			} else if(window.ajaxErrorHandler) { 
 				window.ajaxErrorHandler(r);
 			} else { 
-				qwx.messageBox('Ошибка', 'Ошибка на сервере', true, 'error');
+				qwx.messageBox(qwx.tr('Ошибка'), qwx.tr('Ошибка на сервере'), true, 'error');
 			}
 		}
 	});
