@@ -406,10 +406,10 @@ window.qwx.list = function(place,opt) {
     }
 	
 	if (this.editDialog) { 
-		var opt = this.editDialog;
+		var d_opt = this.editDialog;
 		this.postDisplayRow  =  function(el,o) { 
 				list.enableRowButtons(el,o);
-				if(opt.postDisplayRow) opt.postDisplayRow.call(list, el, o);
+				if(d_opt.postDisplayRow) d_opt.postDisplayRow.call(list, el, o);
 		};
 		this.enableEditor = function(place,o,success_cb) {
 			return list.openEditDialog(o.id, success_cb);
