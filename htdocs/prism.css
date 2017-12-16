@@ -1,4 +1,5 @@
-/* http://prismjs.com/download.html?themes=prism&languages=markup+css+clike+javascript+bash+c+csharp+cpp+java+json+latex+makefile+markdown+perl+php+python+sql&plugins=line-numbers+highlight-keywords */
+/* PrismJS 1.9.0
+http://prismjs.com/download.html?themes=prism&languages=markup+css+clike+javascript+c+bash+cpp+csharp+ruby+diff+erlang+go+handlebars+haskell+java+json+latex+lua+nasm+perl+php+python+sql&plugins=line-numbers */
 /**
  * prism.js default theme for JavaScript, CSS and HTML
  * Based on dabblet (http://dabblet.com)
@@ -145,12 +146,13 @@ pre.line-numbers {
 
 pre.line-numbers > code {
 	position: relative;
+    white-space: inherit;
 }
 
 .line-numbers .line-numbers-rows {
 	position: absolute;
 	pointer-events: none;
-	top: 0;
+	top: -4px;
 	font-size: 100%;
 	left: -3.8em;
 	width: 3em; /* works for line-numbers below 1000 lines */

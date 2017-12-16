@@ -1,76 +1,179 @@
---- tinymce/js/tinymce/plugins/codesample/classes/Dialog.js	2016-06-08 22:16:30.000000000 +0300
-+++ tinymce.new/js/tinymce/plugins/codesample/classes/Dialog.js	2016-06-27 01:31:14.891059807 +0300
-@@ -27,21 +27,28 @@
- 		{text: 'CSS', value: 'css'},
- 		{text: 'PHP', value: 'php'},
- 		{text: 'Ruby', value: 'ruby'},
-+		{text: 'Perl', value: 'perl'},
- 		{text: 'Python', value: 'python'},
- 		{text: 'Java', value: 'java'},
-+		{text: 'JSON', value: 'json'},
-+		{text: 'Markdown', value: 'markdown'},
-+		{text: 'Makefile', value: 'makefile'},
- 		{text: 'C', value: 'c'},
- 		{text: 'C#', value: 'csharp'},
--		{text: 'C++', value: 'cpp'}
-+		{text: 'C++', value: 'cpp'},
-+		{text: 'SQL', value: 'sql'},
-+		{text: 'Bash', value: 'bash'},
-+		{text: 'LaTeX', value: 'latex'}
- 	];
+diff -ur tinymce/js/tinymce/plugins/codesample/plugin.js tinymce.new/js/tinymce/plugins/codesample/plugin.js
+--- tinymce/js/tinymce/plugins/codesample/plugin.js	2017-12-06 01:21:42.000000000 +0300
++++ tinymce.new/js/tinymce/plugins/codesample/plugin.js	2017-12-16 17:35:36.556480134 +0300
+@@ -1203,19 +1203,19 @@
+       return null;
+     };
  
--	function insertCodeSample(editor, language, code) {
-+	function insertCodeSample(editor, language, code, numeration) {
- 		editor.undoManager.transact(function() {
- 			var node = getSelectedCodeSample(editor);
+-    var insertCodeSample = function (editor, language, code) {
++    var insertCodeSample = function (editor, language, code, numeration) {
+       editor.undoManager.transact(function () {
+         var node = getSelectedCodeSample(editor);
  
- 			code = DOM.encode(code);
+         code = DOMUtils.DOM.encode(code);
  
- 			if (node) {
--				editor.dom.setAttrib(node, 'class', 'language-' + language);
-+				editor.dom.setAttrib(node, 'class', 'language-' + language + (numeration ? ' line-numbers' : ''));
- 				node.innerHTML = code;
- 				Prism.highlightElement(node);
- 				editor.selection.select(node);
-@@ -83,6 +90,14 @@
- 		return '';
- 	}
+         if (node) {
+-          editor.dom.setAttrib(node, 'class', 'language-' + language);
++          editor.dom.setAttrib(node, 'class', 'language-' + language + (numeration ? ' line-numbers' : ''));
+           node.innerHTML = code;
+           Prism.highlightElement(node);
+           editor.selection.select(node);
+         } else {
+-          editor.insertContent('<pre id="__new" class="language-' + language + '">' + code + '</pre>');
++          editor.insertContent('<pre id="__new" class="language-' + language + (numeration ? ' line-numbers' : '') + '">' + code + '</pre>');
+           editor.selection.select(editor.$('#__new').removeAttr('id')[0]);
+         }
+       });
+@@ -1231,13 +1231,23 @@
+       return '';
+     };
  
-+	function getLineNumeration(editor) {
-+		var node = getSelectedCodeSample(editor);
-+		if (node) {
-+			return node.className.match(/line-numbers/);
-+		}
-+		return false;
-+	}
++	var getCurrentLineNumeration = function(editor) {
++	  var node = getSelectedCodeSample(editor);
++      if (node) {
++        return node.className.match(/line-numbers/);
++      }
++      return false;
++	};
 +
- 	return {
- 		open: function(editor) {
- 			editor.windowManager.open({
-@@ -99,6 +114,13 @@
- 						value: getCurrentLanguage(editor),
- 						values: languages
- 					},
-+					{
-+						type: 'checkbox',
-+						name: 'numeration',
-+						label: 'Line numbers',
-+						maxWidth: 200,
-+						value: getLineNumeration(editor)
-+					},
+     return {
+       getSelectedCodeSample: getSelectedCodeSample,
+       insertCodeSample: insertCodeSample,
+-      getCurrentCode: getCurrentCode
++      getCurrentCode: getCurrentCode,
++      getCurrentLineNumeration: getCurrentLineNumeration	
+     };
+   }
+ );
++
+ /**
+  * Languages.js
+  *
+@@ -1315,6 +1325,7 @@
+         var currentLanguage = Languages.getCurrentLanguage(editor);
+         var currentLanguages = Languages.getLanguages(editor);
+         var currentCode = CodeSample.getCurrentCode(editor);
++		var currentLineNumeration = CodeSample.getCurrentLineNumeration(editor);
  
- 					{
- 						type: 'textbox',
-@@ -114,9 +136,9 @@
- 					}
- 				],
- 				onSubmit: function(e) {
--					insertCodeSample(editor, e.data.language, e.data.code);
-+					insertCodeSample(editor, e.data.language, e.data.code, e.data.numeration == 1);
- 				}
- 			});
- 		}
- 	};
--});
+         editor.windowManager.open({
+           title: "Insert/Edit code sample",
+@@ -1332,7 +1343,13 @@
+               value: currentLanguage,
+               values: currentLanguages
+             },
+-
++			{
++              type: 'checkbox',
++              name: 'numeration',
++              label: 'Line numbers',
++              maxWidth: 200,
++              value: currentLineNumeration
++            },
+             {
+               type: 'textbox',
+               name: 'code',
+@@ -1347,13 +1364,14 @@
+             }
+           ],
+           onSubmit: function (e) {
+-            CodeSample.insertCodeSample(editor, e.data.language, e.data.code);
++            CodeSample.insertCodeSample(editor, e.data.language, e.data.code, e.data.numeration == 1);
+           }
+         });
+       }
+     };
+   }
+ );
++
+ /**
+  * Commands.js
+  *
+diff -ur tinymce/src/plugins/codesample/src/main/js/core/CodeSample.js tinymce.new/src/plugins/codesample/src/main/js/core/CodeSample.js
+--- tinymce/src/plugins/codesample/src/main/js/core/CodeSample.js	2017-12-06 01:21:40.000000000 +0300
++++ tinymce.new/src/plugins/codesample/src/main/js/core/CodeSample.js	2017-12-16 17:35:35.988480119 +0300
+@@ -26,19 +26,19 @@
+       return null;
+     };
+ 
+-    var insertCodeSample = function (editor, language, code) {
++    var insertCodeSample = function (editor, language, code, numeration) {
+       editor.undoManager.transact(function () {
+         var node = getSelectedCodeSample(editor);
+ 
+         code = DOMUtils.DOM.encode(code);
+ 
+         if (node) {
+-          editor.dom.setAttrib(node, 'class', 'language-' + language);
++          editor.dom.setAttrib(node, 'class', 'language-' + language + (numeration ? ' line-numbers' : ''));
+           node.innerHTML = code;
+           Prism.highlightElement(node);
+           editor.selection.select(node);
+         } else {
+-          editor.insertContent('<pre id="__new" class="language-' + language + '">' + code + '</pre>');
++          editor.insertContent('<pre id="__new" class="language-' + language + (numeration ? ' line-numbers' : '') + '">' + code + '</pre>');
+           editor.selection.select(editor.$('#__new').removeAttr('id')[0]);
+         }
+       });
+@@ -54,10 +54,19 @@
+       return '';
+     };
+ 
++	var getCurrentLineNumeration = function(editor) {
++	  var node = getSelectedCodeSample(editor);
++      if (node) {
++        return node.className.match(/line-numbers/);
++      }
++      return false;
++	};
++
+     return {
+       getSelectedCodeSample: getSelectedCodeSample,
+       insertCodeSample: insertCodeSample,
+-      getCurrentCode: getCurrentCode
++      getCurrentCode: getCurrentCode,
++      getCurrentLineNumeration: getCurrentLineNumeration	
+     };
+   }
+-);
 \ В конце файла нет новой строки
-+});
++);
+diff -ur tinymce/src/plugins/codesample/src/main/js/ui/Dialog.js tinymce.new/src/plugins/codesample/src/main/js/ui/Dialog.js
+--- tinymce/src/plugins/codesample/src/main/js/ui/Dialog.js	2017-12-06 01:21:40.000000000 +0300
++++ tinymce.new/src/plugins/codesample/src/main/js/ui/Dialog.js	2017-12-16 17:35:35.988480119 +0300
+@@ -23,6 +23,7 @@
+         var currentLanguage = Languages.getCurrentLanguage(editor);
+         var currentLanguages = Languages.getLanguages(editor);
+         var currentCode = CodeSample.getCurrentCode(editor);
++		var currentLineNumeration = CodeSample.getCurrentLineNumeration(editor);
+ 
+         editor.windowManager.open({
+           title: "Insert/Edit code sample",
+@@ -40,7 +41,13 @@
+               value: currentLanguage,
+               values: currentLanguages
+             },
+-
++			{
++              type: 'checkbox',
++              name: 'numeration',
++              label: 'Line numbers',
++              maxWidth: 200,
++              value: currentLineNumeration
++            },
+             {
+               type: 'textbox',
+               name: 'code',
+@@ -55,10 +62,10 @@
+             }
+           ],
+           onSubmit: function (e) {
+-            CodeSample.insertCodeSample(editor, e.data.language, e.data.code);
++            CodeSample.insertCodeSample(editor, e.data.language, e.data.code, e.data.numeration == 1);
+           }
+         });
+       }
+     };
+   }
+-);
+\ В конце файла нет новой строки
++);
