@@ -45,25 +45,25 @@ install_tinymce4_patched:
 	( cd /tmp/tinymce && patch -p1 < /tmp/codesample.patch )
 #### replace porkbun etc with old, pre-ts version
 	( cd /tmp && git clone https://github.com/ephox/porkbun.git && (cd porkbun && git checkout b26226b6de624837470668dcaad4fa7a068bd903))
-	( cd /tmp && cp -r porkbun/* tinymce/node_modules/\@ephox/porkbun/ )
+	( cd /tmp && cp -r porkbun/* tinymce/node_modules/\\@ephox/porkbun/ )
 
 	( cd /tmp && git clone https://github.com/ephox/boss.git && (cd boss && git checkout 95a896584e246f95f8b53f0c9dff1efaaf0103b8))
-	( cd /tmp && cp -r boss/* tinymce/node_modules/\@ephox/boss/)
+	( cd /tmp && cp -r boss/* tinymce/node_modules/\\@ephox/boss/)
 
 	( cd /tmp && git clone https://github.com/ephox/dragster.git && (cd dragster && git checkout b13c4e3dbfed1820ef06476a7d6f4d4771e1e43f))
-	( cd /tmp && cp -r dragster/* tinymce/node_modules/\@ephox/dragster/ )
+	( cd /tmp && cp -r dragster/* tinymce/node_modules/\\@ephox/dragster/ )
 
 	( cd /tmp && git clone https://github.com/ephox/echo.git && (cd echo && git checkout fecc1f7386af6558453d011847ead9200e98a559))
-	( cd /tmp && cp -r echo/* tinymce/node_modules/\@ephox/echo/ )
+	( cd /tmp && cp -r echo/* tinymce/node_modules/\\@ephox/echo/ )
 
 	( cd /tmp && git clone https://github.com/ephox/phoenix.git && (cd phoenix && git checkout 2e09463e97acea7fff7c98338caefc8b3328e605))
-	( cd /tmp && cp -r phoenix/* tinymce/node_modules/\@ephox/phoenix/ )
+	( cd /tmp && cp -r phoenix/* tinymce/node_modules/\\@ephox/phoenix/ )
 
 	( cd /tmp && git clone https://github.com/ephox/polaris.git && (cd polaris && git checkout 5d4cfb09290dae34f4ee65ce86284eca6a77c224))
-	( cd /tmp && cp -r polaris/* tinymce/node_modules/\@ephox/polaris/ )
+	( cd /tmp && cp -r polaris/* tinymce/node_modules/\\@ephox/polaris/ )
 
 	( cd /tmp && git clone https://github.com/ephox/robin.git && (cd robin && git checkout 70737ac35266d73a6044bd297a40ce02268e5bda))
-	( cd /tmp && cp -r robin/* tinymce/node_modules/\@ephox/robin/ ) 
+	( cd /tmp && cp -r robin/* tinymce/node_modules/\\@ephox/robin/ ) 
 
 
 #	# заменим ту версию prism.js что включена в tinymce на нашу, с более реалистичным списком поддерживаемых языков
