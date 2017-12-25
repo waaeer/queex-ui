@@ -5,12 +5,12 @@ QLIB=$(PREFIX)/htdocs/lib
 QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
 
-BOOTSTRAP=3.3.6
-TINYMCE=4.4.0
+BOOTSTRAP=3.3.7
+TINYMCE=4.7.4
 JQUERY=1.12.4
-BOOTSTRAP_DP=1.5.1
-SPRINTF_JS=1.0.3
-SNAP=0.4.1
+BOOTSTRAP_DP=1.7.1
+SPRINTF_JS=1.1.1
+SNAP=0.5.1
 VIEWERJS=0.5.8
 FONTAWESOME=4.7.0
 
@@ -43,9 +43,35 @@ install_tinymce4_patched:
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 	( wget -c -O /tmp/tmce4.zip http://download.ephox.com/tinymce/community/tinymce_$(TINYMCE)_dev.zip && unzip -qo /tmp/tmce4.zip -d /tmp )
 	( cd /tmp/tinymce && patch -p1 < /tmp/codesample.patch )
-	# заменим ту версию prism.js что включена в tinymce на нашу, с более реалистичным списком поддерживаемых языков
-	perl -MFile::Slurp -i -e 'my $$g=File::Slurp::read_file("htdocs/prism.js"); my $$s=0; while(<>) { if($$s==0) { if(/Start wrap/) { $$s=1; } print $$_; } elsif ($$s==1) { if(/End wrap/) { $$s=2;print "$$g\n$$_"; }} else { print $$_; }}' /tmp/tinymce/js/tinymce/plugins/codesample/classes/Prism.js
-	( cd /tmp/tinymce && export PATH=$$PATH:/usr/local/bin; npm i && perl -ni -e 'print unless /index.html/' Gruntfile.js &&  grunt --force && cd tmp && unzip tinymce_$(TINYMCE).zip )
+	( cd /tmp/tinymce && npm i )
+
+#### replace porkbun etc with old, pre-ts version
+	rm -rf /tmp/porkbun /tmp/boss /tmp/dragster /tmp/echo /tmp/phoenix /tmp/polaris /tmp/robin
+	( cd /tmp && git clone https://github.com/ephox/porkbun.git && (cd porkbun && git checkout b26226b6de624837470668dcaad4fa7a068bd903))
+	( cd /tmp && cp -r porkbun/* tinymce/node_modules/\@ephox/porkbun/ )
+
+	( cd /tmp && git clone https://github.com/ephox/boss.git && (cd boss && git checkout 95a896584e246f95f8b53f0c9dff1efaaf0103b8))
+	( cd /tmp && cp -r boss/* tinymce/node_modules/\@ephox/boss/)
+
+	( cd /tmp && git clone https://github.com/ephox/dragster.git && (cd dragster && git checkout b13c4e3dbfed1820ef06476a7d6f4d4771e1e43f))
+	( cd /tmp && cp -r dragster/* tinymce/node_modules/\@ephox/dragster/ )
+
+	( cd /tmp && git clone https://github.com/ephox/echo.git && (cd echo && git checkout fecc1f7386af6558453d011847ead9200e98a559))
+	( cd /tmp && cp -r echo/* tinymce/node_modules/\@ephox/echo/ )
+
+	( cd /tmp && git clone https://github.com/ephox/phoenix.git && (cd phoenix && git checkout 2e09463e97acea7fff7c98338caefc8b3328e605))
+	( cd /tmp && cp -r phoenix/* tinymce/node_modules/\@ephox/phoenix/ )
+
+	( cd /tmp && git clone https://github.com/ephox/polaris.git && (cd polaris && git checkout 5d4cfb09290dae34f4ee65ce86284eca6a77c224))
+	( cd /tmp && cp -r polaris/* tinymce/node_modules/\@ephox/polaris/ )
+
+	( cd /tmp && git clone https://github.com/ephox/robin.git && (cd robin && git checkout 70737ac35266d73a6044bd297a40ce02268e5bda))
+	( cd /tmp && cp -r robin/* tinymce/node_modules/\@ephox/robin/ ) 
+
+
+#	# заменим ту версию prism.js что включена в tinymce на нашу, с более реалистичным списком поддерживаемых языков
+#	perl -MFile::Slurp -i -e 'my $$g=File::Slurp::read_file("htdocs/prism.js"); my $$s=0; while(<>) { if($$s==0) { if(/Start wrap/) { $$s=1; } print $$_; } elsif ($$s==1) { if(/End wrap/) { $$s=2;print "$$g\n$$_"; }} else { print $$_; }}' /tmp/tinymce/js/tinymce/plugins/codesample/classes/Prism.js
+	( cd /tmp/tinymce &&  grunt --force && cd tmp && unzip tinymce_$(TINYMCE).zip )
 	( cd /tmp/tinymce/tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce4/{} \; )
 	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
@@ -67,7 +93,7 @@ install_bootstrap3:
 install_jstools:
 	( if [ ! -d /tmp/jstools-qui ]; then mkdir /tmp/jstools-qui; fi )
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
-	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js http://underscorejs.org/underscore-min.js)
+	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js.gz http://underscorejs.org/underscore-min.js && gzip -d /tmp/jstools-qui/underscore-min.js.gz)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/json2.js	https://raw.github.com/douglascrockford/JSON-js/master/json2.js)
 	(wget --no-check-certificate -c -O /tmp/fa.zip http://fontawesome.io/assets/font-awesome-$(FONTAWESOME).zip && unzip -o -d /tmp/jstools-qui /tmp/fa.zip && cd /tmp/jstools-qui && ln -s font-awesome-$(FONTAWESOME) font-awesome)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js  https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.min.js)

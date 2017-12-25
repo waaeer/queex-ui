@@ -631,10 +631,12 @@ window.qwx.selectWidget = function(place,opt) {
 			var d = opt.data[i];
 			$('<option/>',{value:d[0],selected:(d[0]==val)}).html(d[1]).appendTo(sel);
 		}		
-		sel.on('change', function() { 
+		sel.on('change', function(ev) { 
 			var option = sel[0].options[sel[0].selectedIndex];
 			var id = option.value; 
-			place.trigger('change', id && id != '' ? {id:id, text:option.text} : null); 
+			place.trigger('change', id && id != '' ? {id:id, text:option.text} : null);
+			ev.stopPropagation();
+			return true; 
 		});
 	}
 };
@@ -650,6 +652,19 @@ window.qwx.selectWidget.prototype.val = function() {
 		return this.sel.val();
 	}
 };
+window.qwx.selectWidget.prototype.object_val = function() { 
+	if(arguments.length==1) {
+		var v = arguments[0];
+		if(_.isObject(v)) v = v.id;
+		return this.sel.val(v);
+	} else { 
+		var sel = this.sel[0];
+		return { id: sel.options[sel.selectedIndex].value, text: sel.options[sel.selectedIndex].text };
+	}
+};
+window.qwx.selectWidget.prototype.focus = function() { 
+    this.sel[0].focus();
+};
 
 +function($) { 
 	$.fn.qwxSelectWidget = function(option) { 
@@ -659,8 +674,14 @@ window.qwx.selectWidget.prototype.val = function() {
 			var w = this.data('widget');
 			if (option == 'val') {		
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+			} else if (option == 'object_val') {		
+				return arguments.length == 1 ? w.object_val() : w.object_val(arguments[1]);
 			} else if(option == 'widget') { 
 				return w ? w : null;
+			} else if(option == 'focus') { 
+				w.focus();
+			} else { 
+				console.log('Method ' + option + ' does not exist in SelectWidget');
 			}
 		}
 		return this;
@@ -761,15 +782,18 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		name : 'autocomplete-' + (opt.name || ''),
 		displayKey: (opt.displayKey || 'title'),
 		limit: (opt.limit || 5),
-		source: function(q,sync_cb,async_cb) { 
-			qwx.ajax({url: opt.url , data: [ q ], success: function(r) { 
+		source: function(q,sync_cb,async_cb) { 			
+			var args = [q];
+			if(opt.preprocessQuery) { args = opt.preprocessQuery(args); } 
+			qwx.ajax({url: opt.url , data: args, success: function(r) { 
 				if(opt.preprocessList) { r.list = opt.preprocessList(q, r.list); }
 				async_cb(r.list);
 			}});
 		},
 		templates: {
 			suggestion: opt.suggestionHTML
-		}
+		},
+		preprocessQueryForHighlight: opt.preprocessQueryForHighlight
 	});
 
 	var state = this.state = null;
@@ -836,7 +860,9 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 window.qwx.autocompleteWidget.prototype.close = function() { 
 	this.inp.typeahead('close');
 };
-
+window.qwx.autocompleteWidget.prototype.focus = function() { 
+    this.inp[0].focus();
+};
 
 
 +function($) { 
@@ -850,6 +876,10 @@ window.qwx.autocompleteWidget.prototype.close = function() {
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
 			} else if(option == 'widget') { 
 				return w ? w : null;
+			} else if(option == 'focus') { 
+				w.focus();
+			} else { 
+				console.log('Method ' + option + ' does not exist in AutocompleteWidget');
 			}
 		}
 		return this;
