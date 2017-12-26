@@ -696,29 +696,47 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.nullText = opt.nullText;
 	var base = $('<div class="dropdown"/>').appendTo(place.html(''));
 	var btn  = $('<button class="btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
-	$('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
+	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
 	$('<span class="caret"/>').appendTo(btn);
 	var menu = $('<ul class="dropdown-menu pseudo-select"/>').appendTo(base);
 	this.menu = menu;
 	this.btn  = btn;
+	var self = this;
+	function setmenuhandlers(items) { 
+		items.on('click', function(ev) {
+			if(!$(this).hasClass('not-selectable')) {
+				self.value = val = this.getAttribute('data-id');
+				if(self.value == '') self.value = val =  null;
+				menu.find('li').removeClass('selected');
+				var txt = $(this).addClass('selected').find('label').html();
+				
+				selected.html( txt );
+				place.trigger('change', { id: self.value, el: this, text: txt });
+//				base.dropdown('toggle'); 
+			}
+		});
+	}
+	function select_current() { 
+		if(val) { 
+			menu.find('li[data-id="' + val + '"]').addClass('selected');
+    	}
+	}
+
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
+		setmenuhandlers(menu.find('li'));
+		select_current();
+	} else { 
+		base.on('show.bs.dropdown',function() { 
+			if(opt.getData) { 
+				opt.getData(function(data) { 
+					menu.html(qwx.t(opt.template, { list: data , el: self}));
+					setmenuhandlers(menu.find('li'));
+					select_current();
+				});
+			} 
+		});
 	}
-	var self = this;
-	if(val) { 
-		menu.find('li[data-id=' + val + ']').addClass('selected');
-	}
-	menu.find('li').on('click', function(ev) {
-		if(!$(this).hasClass('not-selectable')) {
-			self.value = this.getAttribute('data-id');
-			if(self.value == '') self.value = null;
-			menu.find('li').removeClass('selected');
-			var txt = $(this).addClass('selected').find('label').html();
-			btn.find('span.selected-option-text').html( txt );
-			place.trigger('change', { id: self.value, el: this, text: txt });
-		}
-			
-	});
 
 };
 window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
