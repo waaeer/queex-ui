@@ -1129,6 +1129,7 @@ window.qwx.editDialog = function (id, opt) {
 	this.getAfterSave	  = opt.getAfterSave;
 	this.templateOpt      = opt.templateOpt;
 	this.validator        = opt.validator;
+    this.apiMethod        = opt.apiMethod      || 'get';
 	var self = this;
 
 	var openModal = function(obj) { 
@@ -1156,7 +1157,7 @@ window.qwx.editDialog = function (id, opt) {
 		});
 	}
 	if(id) { 
-		this.apiCall('get', [ this.cid, id, this.data_prepare_opt], null, function(r) { 
+		this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) { 
 			openModal(r.obj);				
 		});
 	} else { 	
