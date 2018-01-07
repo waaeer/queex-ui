@@ -1160,10 +1160,11 @@ window.qwx.editDialog = function (id, opt) {
 		var dialog = modal.find('.modal-dialog');
 		self.obj = obj;
 		self.modal = modal;
-		modal.modalBox({backdrop: false});
+		modal.modalBox({backdrop: 'static'});
 		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.value = obj[n] ? obj[n] : ''; });
 		dialog.find('select').each(function() { var n = this.name; if(n) $(this).val(obj[n] && (typeof obj[n]) == 'object' ? obj[n].id: obj[n] ); });
 		dialog.find('input[type=checkbox]').each(function() { this.checked = obj[this.name] && obj[this.name].id > 0 });
+		dialog.find('input[type=radio]').each(function() { this.checked = obj[this.name] == this.value });
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); $(this).data('widget').val(obj[name]); });
 
 		if(self.fillDialog) self.fillDialog(dialog, obj);
