@@ -358,7 +358,9 @@ window.qwx.widget = function(place,opt) {
 	if(!opt) console.log('qwxWidget call without options');
 	this.place   = place;
 	this.api     = opt.api     || '/user/api';
-	place.data('widget',this);
+	if(place) {
+		place.data('widget',this);
+	}
 	var self = this;
 	this.apiCall = opt.apiCall || function(method, args, block, cb) { 
 		qwx.ajax({
@@ -1186,7 +1188,7 @@ window.qwx.editDialog = function (id, opt) {
 		];
 			
 		if (self.collectData) self.collectData(form, attr, ops);
-		if (self.getAfterSave && self.getAfterSave == 'final') ops.push(['get', self.cid, id, self.data_prepare_view_opt ]);
+		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
 				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
 				form.closest('.modal').modal('hide');
