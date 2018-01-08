@@ -131,7 +131,6 @@ if(!window.qwx) { window.qwx = {} }
 	}
 	window.qwx.template = function(template) { 
 		if(template.substr(0,1) == '#') { 
-			var el = document.getElementById(template.substr(1));
 			if(el) { 
 				return _.template(el.innerHTML);
 			} else { 
@@ -237,7 +236,7 @@ window.qwx.ajax = function(opt) {
 					} else {
 						rc = true;
 					}
-					if(opt.block && rc) { 
+					if(opt.block ) { 
 						qwx.closeMessageBox();
 					}
 			}
@@ -360,6 +359,7 @@ window.qwx.widget = function(place,opt) {
 	this.api     = opt.api     || '/user/api';
 	if(place) {
 		place.data('widget',this);
+		place.attr('role', 'widget');
 	}
 	var self = this;
 	this.apiCall = opt.apiCall || function(method, args, block, cb) { 
@@ -698,29 +698,47 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.nullText = opt.nullText;
 	var base = $('<div class="dropdown"/>').appendTo(place.html(''));
 	var btn  = $('<button class="btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
-	$('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
+	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
 	$('<span class="caret"/>').appendTo(btn);
 	var menu = $('<ul class="dropdown-menu pseudo-select"/>').appendTo(base);
 	this.menu = menu;
 	this.btn  = btn;
+	var self = this;
+	function setmenuhandlers(items) { 
+		items.on('click', function(ev) {
+			if(!$(this).hasClass('not-selectable')) {
+				self.value = val = this.getAttribute('data-id');
+				if(self.value == '') self.value = val =  null;
+				menu.find('li').removeClass('selected');
+				var txt = $(this).addClass('selected').find('label').html();
+				
+				selected.html( txt );
+				place.trigger('change', { id: self.value, el: this, text: txt });
+//				base.dropdown('toggle'); 
+			}
+		});
+	}
+	function select_current() { 
+		if(val) { 
+			menu.find('li[data-id="' + val + '"]').addClass('selected');
+    	}
+	}
+
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
+		setmenuhandlers(menu.find('li'));
+		select_current();
+	} else { 
+		base.on('show.bs.dropdown',function() { 
+			if(opt.getData) { 
+				opt.getData(function(data) { 
+					menu.html(qwx.t(opt.template, { list: data , el: self}));
+					setmenuhandlers(menu.find('li'));
+					select_current();
+				});
+			} 
+		});
 	}
-	var self = this;
-	if(val) { 
-		menu.find('li[data-id=' + val + ']').addClass('selected');
-	}
-	menu.find('li').on('click', function(ev) {
-		if(!$(this).hasClass('not-selectable')) {
-			self.value = this.getAttribute('data-id');
-			if(self.value == '') self.value = null;
-			menu.find('li').removeClass('selected');
-			var txt = $(this).addClass('selected').find('label').html();
-			btn.find('span.selected-option-text').html( txt );
-			place.trigger('change', { id: self.value, el: this, text: txt });
-		}
-			
-	});
 
 };
 window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
@@ -1144,17 +1162,18 @@ window.qwx.editDialog = function (id, opt) {
 		var dialog = modal.find('.modal-dialog');
 		self.obj = obj;
 		self.modal = modal;
-		modal.modalBox({backdrop: false});
+		modal.modalBox({backdrop: 'static'});
 		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.value = obj[n] ? obj[n] : ''; });
-		dialog.find('select').each(function() { var n = this.name; if(n) $(this).val(obj[n] && (typeof obj[n]) == 'object' ? obj[n].id: obj[n] ); });
-		dialog.find('input[type=checkbox]').each(function() { this.checked = obj[this.name] && obj[this.name].id > 0 });
+		dialog.find('select').each(function() { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); });
+		dialog.find('input[type=checkbox]').each(function() { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); });
+		dialog.find('input[type=radio]').each(function() { this.checked = obj[this.name] == this.value });
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); $(this).data('widget').val(obj[name]); });
 
 		if(self.fillDialog) self.fillDialog(dialog, obj);
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
 		modal.one('hidden.bs.modal', function() { modal.remove();  });
-		modal.find('.btn-save,[role=saveButton]').on('click', function() {
+		modal.find('.btn-save,[role=saveButton]').on('click', function() { 
 			self.saveDialog(this );
 		});
 	}
@@ -1174,6 +1193,7 @@ window.qwx.editDialog = function (id, opt) {
 		form.find('input[type=text],input[type=number],textarea') .each(function() { attr[this.getAttribute('name')] = this.value; });
 		form.find('select').each(function() { attr[this.getAttribute('name')] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
 		form.find('input[type=checkbox]').each(function() { attr[this.getAttribute('name')] = this.checked ? 1 : 0; });
+		form.find('input[type=radio]'   ).each(function() { if(this.checked) attr[this.getAttribute('name')] = this.value; });
 		form.find('[role=widget]').each(function() { attr[this.getAttribute('name')] = $(this).data('widget').val(); });
 
 		var has_err = false;
