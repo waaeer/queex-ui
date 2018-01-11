@@ -189,6 +189,14 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwx.checkbox_wrap = function(sel, false_null) { 
 		return new qwx.checkBoxWrapper(sel, false_null);		
 	}
+	window.qwx.scrollTo = function(el, speed, complete) { 
+		var el=$(el);
+		if(el.length>0) { 
+			$('html, body').animate({
+    		    scrollTop: el.offset().top
+    		}, speed || 2000, 'swing', complete);
+		}
+	}
 }();
 
 function formatSize(size) { 
@@ -500,7 +508,6 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 			});
 		}
 		list.place.trigger('afterDisplayList', { items: r.list });
-
 	});
 };
 window.qwx.list.prototype.setFilter = function(fld,val) {
@@ -545,6 +552,7 @@ window.qwx.list.prototype.reload = function() {
 };
 window.qwx.list.prototype.setObject = function(obj, opt) { 
 	var place = document.getElementById('row-' + obj.id);
+	if(!place) place = this.place.find('[data-id=' + obj.id + ']')[0];
 	if(place) { 
 		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
 		$(place).replaceWith(new_row); 
@@ -555,6 +563,18 @@ window.qwx.list.prototype.setObject = function(obj, opt) {
 		return true;
 	} else if (opt.ifnot == 'reload') {
 		this.reload();	
+	} else {
+		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
+		if(opt.ifnot == 'top') { 
+			new_row.prependTo(this.place);			
+		} else { 
+			new_row.appendTo(this.place);
+		}
+		if(this.makeRowSelectable) this.makeRowSelectable(new_row);
+		if(this.postDisplayRow) { 
+			this.postDisplayRow.call(this, new_row, obj );
+		}	
+		return true;
 	}
 
 	return false;
@@ -1208,7 +1228,7 @@ window.qwx.editDialog = function (id, opt) {
 		];
 			
 		if (self.collectData) self.collectData(form, attr, ops);
-		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
+		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);ox
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
 				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
 				form.closest('.modal').modal('hide');
