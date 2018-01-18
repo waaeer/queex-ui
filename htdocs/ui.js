@@ -1228,7 +1228,7 @@ window.qwx.editDialog = function (id, opt) {
 		];
 			
 		if (self.collectData) self.collectData(form, attr, ops);
-		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);ox
+		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
 				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
 				form.closest('.modal').modal('hide');
