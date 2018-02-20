@@ -177,6 +177,10 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwx.args.prototype.arg = function(key) { 
 		return this.data[key];
 	}
+	window.qwx.args.prototype.args = function(key) { 
+		return this.data;
+	}
+
 	window.qwx.getArgs = function() {
 		return new qwx.args(window.location.search.substr(1));
 	}
