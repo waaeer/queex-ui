@@ -1250,6 +1250,7 @@ window.qwx.editDialog = function (id, opt) {
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
 				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
 				form.closest('.modal').modal('hide');
+				window.qwx.closeMessageBox();
 				return true;
 		});
 	};
