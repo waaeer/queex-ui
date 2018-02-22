@@ -5,6 +5,8 @@ if(!window.qwx) { window.qwx = {} }
 		x.one('shown.bs.modal', function() { 
 			modalStack.push(x);
 			this.style.zIndex = 1040 + 10 * modalStack.length;
+			var backdrops = $('.modal-backdrop');
+			backdrops[backdrops.length-1].style.zIndex = 1035 + 10 * modalStack.length;
 			x.data('focus_in', document.activeElement);
 			$(this).find('[autofocus]').focus();
 			var prev = modalStack.length == 1 ? null : modalStack[modalStack.length-2];
@@ -113,13 +115,14 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwxTemplateCache = {};
 	window.qwx.t = function(template,vars) { 
 		if(template.substr(0,1) == '#') { 
-			var t = window.qwxTemplateCache[template.substr(1)];
+			var id = template.substr(1);
+			var t = window.qwxTemplateCache[id];
 			if(!t) {
-				var el = document.getElementById(template.substr(1));
+				var el = document.getElementById(id);
 				if(el) { 
-					t = window.qwxTemplateCache[template.substr(1)] = _.template(el.innerHTML);
+					t = window.qwxTemplateCache[id] = _.template(el.innerHTML);
 				} else { 
-					console.log('No element ', template);
+					console.log('No element ', id);
 					return '';
 				}
 			}	
@@ -130,11 +133,13 @@ if(!window.qwx) { window.qwx = {} }
 		}
 	}
 	window.qwx.template = function(template) { 
-		if(template.substr(0,1) == '#') { 
+		if(template.substr(0,1) == '#') {
+			var id = template.substr(1);
+			var el = document.getElementById(id); 
 			if(el) { 
 				return _.template(el.innerHTML);
 			} else { 
-				console.log('No element ', template);
+				console.log('No element ', id);
 				return '';
 			}
 		} else { 
@@ -177,7 +182,7 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwx.args.prototype.arg = function(key) { 
 		return this.data[key];
 	}
-	window.qwx.args.prototype.args = function(key) { 
+	window.qwx.args.prototype.args = function() {
 		return this.data;
 	}
 
@@ -193,9 +198,9 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwx.checkbox_wrap = function(sel, false_null) { 
 		return new qwx.checkBoxWrapper(sel, false_null);		
 	}
-	window.qwx.scrollTo = function(el, speed, complete) { 
+	window.qwx.scrollTo = function(el, speed, complete) {
 		var el=$(el);
-		if(el.length>0) { 
+		if(el.length>0) {
 			$('html, body').animate({
     		    scrollTop: el.offset().top
     		}, speed || 2000, 'swing', complete);
@@ -219,7 +224,11 @@ window.qwx.tr = function(msg) {
 }
 window.qwx.ajax = function(opt) { 
 	if(opt.block) { 
-		qwx.messageBox(null, (opt.block.message ? opt.block.message : qwx.tr('Подождите...')), false, 'wait');
+		if(typeof opt.block == 'function') {
+			opt.block();
+		} else {
+			qwx.messageBox(null, (opt.block.message ? opt.block.message : qwx.tr('Подождите...')), false, 'wait');
+		}
 	}
 	$.ajax({
 		url: opt.url, 
@@ -248,7 +257,7 @@ window.qwx.ajax = function(opt) {
 					} else {
 						rc = true;
 					}
-					if(opt.block ) { 
+					if(opt.block && rc) { 
 						qwx.closeMessageBox();
 					}
 			}
@@ -404,6 +413,7 @@ window.qwx.list = function(place,opt) {
 	this.editDialog     = opt.editDialog;
 	this.postprocessQuery = opt.postprocessQuery;
 	this.onBeforeDisplayList = opt.onBeforeDisplayList;
+	this.getList        = opt.getList; // function for use instead of default api
 	this.data           = opt.data; // simply load data for custom methods and templates
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
@@ -475,7 +485,11 @@ window.qwx.list.prototype.getData = function (page,filter,cb) {
 	if(query.__dont_get_data) { 
 		cb({list:[],n:0});
 	} else { 
-		this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, cb);			
+		if(this.getList) { 
+			this.getList(query, page, cb);
+		} else { 
+			this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, cb);
+		}
 	}
 }	
 
@@ -569,15 +583,15 @@ window.qwx.list.prototype.setObject = function(obj, opt) {
 		this.reload();	
 	} else {
 		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
-		if(opt.ifnot == 'top') { 
-			new_row.prependTo(this.place);			
-		} else { 
+		if(opt.ifnot == 'top') {
+			new_row.prependTo(this.place);
+		} else {
 			new_row.appendTo(this.place);
 		}
 		if(this.makeRowSelectable) this.makeRowSelectable(new_row);
-		if(this.postDisplayRow) { 
+		if(this.postDisplayRow) {
 			this.postDisplayRow.call(this, new_row, obj );
-		}	
+		}
 		return true;
 	}
 
@@ -657,12 +671,12 @@ window.qwx.selectWidget = function(place,opt) {
 			var d = opt.data[i];
 			$('<option/>',{value:d[0],selected:(d[0]==val)}).html(d[1]).appendTo(sel);
 		}		
-		sel.on('change', function(ev) { 
+		sel.on('change', function(ev) {
 			var option = sel[0].options[sel[0].selectedIndex];
 			var id = option.value; 
 			place.trigger('change', id && id != '' ? {id:id, text:option.text} : null);
 			ev.stopPropagation();
-			return true; 
+			return true;
 		});
 	}
 };
@@ -678,17 +692,17 @@ window.qwx.selectWidget.prototype.val = function() {
 		return this.sel.val();
 	}
 };
-window.qwx.selectWidget.prototype.object_val = function() { 
+window.qwx.selectWidget.prototype.object_val = function() {
 	if(arguments.length==1) {
 		var v = arguments[0];
 		if(_.isObject(v)) v = v.id;
 		return this.sel.val(v);
-	} else { 
+	} else {
 		var sel = this.sel[0];
 		return { id: sel.options[sel.selectedIndex].value, text: sel.options[sel.selectedIndex].text };
 	}
 };
-window.qwx.selectWidget.prototype.focus = function() { 
+window.qwx.selectWidget.prototype.focus = function() {
     this.sel[0].focus();
 };
 
@@ -700,13 +714,13 @@ window.qwx.selectWidget.prototype.focus = function() {
 			var w = this.data('widget');
 			if (option == 'val') {		
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-			} else if (option == 'object_val') {		
+			} else if (option == 'object_val') {
 				return arguments.length == 1 ? w.object_val() : w.object_val(arguments[1]);
 			} else if(option == 'widget') { 
 				return w ? w : null;
-			} else if(option == 'focus') { 
+			} else if(option == 'focus') {
 				w.focus();
-			} else { 
+			} else {
 				console.log('Method ' + option + ' does not exist in SelectWidget');
 			}
 		}
@@ -728,42 +742,40 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.menu = menu;
 	this.btn  = btn;
 	var self = this;
-	function setmenuhandlers(items) { 
+	function setmenuhandlers(items) {
 		items.on('click', function(ev) {
 			if(!$(this).hasClass('not-selectable')) {
 				self.value = val = this.getAttribute('data-id');
 				if(self.value == '') self.value = val =  null;
 				menu.find('li').removeClass('selected');
 				var txt = $(this).addClass('selected').find('label').html();
-				
 				selected.html( txt );
 				place.trigger('change', { id: self.value, el: this, text: txt });
-//				base.dropdown('toggle'); 
+//				base.dropdown('toggle');
 			}
 		});
 	}
-	function select_current() { 
-		if(val) { 
+	function select_current() {
+		if(val) {
 			menu.find('li[data-id="' + val + '"]').addClass('selected');
-    	}
+		}
 	}
 
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
 		setmenuhandlers(menu.find('li'));
 		select_current();
-	} else { 
-		base.on('show.bs.dropdown',function() { 
-			if(opt.getData) { 
-				opt.getData(function(data) { 
+	} else {
+		base.on('show.bs.dropdown',function() {
+			if(opt.getData) {
+				opt.getData(function(data) {
 					menu.html(qwx.t(opt.template, { list: data , el: self}));
 					setmenuhandlers(menu.find('li'));
 					select_current();
 				});
-			} 
+			}
 		});
 	}
-
 };
 window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.pseudoSelectWidget.prototype.constructor = window.qwx.pseudoSelectWidget;
@@ -828,8 +840,8 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		limit: (opt.limit || 5),
 		source: function(q,sync_cb,async_cb) { 			
 			var args = [q];
-			if(opt.preprocessQuery) { args = opt.preprocessQuery(args); } 
-			qwx.ajax({url: opt.url , data: args, success: function(r) { 
+			if(opt.preprocessQuery) { args = opt.preprocessQuery(args); }
+			qwx.ajax({url: opt.url , data: args, success: function(r) {
 				if(opt.preprocessList) { r.list = opt.preprocessList(q, r.list); }
 				async_cb(r.list);
 			}});
@@ -901,10 +913,10 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 		if(this.onSelect) this.onSelect(o);
 	}
 };
-window.qwx.autocompleteWidget.prototype.close = function() { 
+window.qwx.autocompleteWidget.prototype.close = function() {
 	this.inp.typeahead('close');
 };
-window.qwx.autocompleteWidget.prototype.focus = function() { 
+window.qwx.autocompleteWidget.prototype.focus = function() {
     this.inp[0].focus();
 };
 
@@ -918,11 +930,11 @@ window.qwx.autocompleteWidget.prototype.focus = function() {
 			var w = this.data('widget');
 			if (option == 'val') {		
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-			} else if(option == 'widget') { 
+			} else if(option == 'widget') {
 				return w ? w : null;
-			} else if(option == 'focus') { 
+			} else if(option == 'focus') {
 				w.focus();
-			} else { 
+			} else {
 				console.log('Method ' + option + ' does not exist in AutocompleteWidget');
 			}
 		}
@@ -1197,12 +1209,12 @@ window.qwx.editDialog = function (id, opt) {
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
 		modal.one('hidden.bs.modal', function() { modal.remove();  });
-		modal.find('.btn-save,[role=saveButton]').on('click', function() { 
+		modal.find('.btn-save,[role=saveButton]').on('click', function() {
 			self.saveDialog(this );
 		});
 	}
 	if(id) { 
-		this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) { 
+		this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {
 			openModal(r.obj);				
 		});
 	} else { 	
@@ -1231,7 +1243,9 @@ window.qwx.editDialog = function (id, opt) {
 			[	'save', self.cid,   id, attr ],
 		];
 			
-		if (self.collectData) self.collectData(form, attr, ops);
+		if (self.collectData) { 
+			try { self.collectData(form, attr, ops); } catch(err) { window.qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
+		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
 				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
