@@ -6,7 +6,10 @@ if(!window.qwx) { window.qwx = {} }
 			modalStack.push(x);
 			this.style.zIndex = 1040 + 10 * modalStack.length;
 			var backdrops = $('.modal-backdrop');
-			backdrops[backdrops.length-1].style.zIndex = 1035 + 10 * modalStack.length;
+			var last_backdrop = backdrops[backdrops.length-1];
+			if(last_backdrop) { 
+				last_backdrop.style.zIndex = 1035 + 10 * modalStack.length;
+			}
 			x.data('focus_in', document.activeElement);
 			$(this).find('[autofocus]').focus();
 			var prev = modalStack.length == 1 ? null : modalStack[modalStack.length-2];
@@ -414,12 +417,14 @@ window.qwx.list = function(place,opt) {
 	this.postprocessQuery = opt.postprocessQuery;
 	this.onBeforeDisplayList = opt.onBeforeDisplayList;
 	this.getList        = opt.getList; // function for use instead of default api
-	this.data           = opt.data; // simply load data for custom methods and templates
+	this.data           = opt.data; // simply load data for custom methods and templates	
+	this.defaultFilter = {};
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
 	}
 	var page_arg   = this.page_arg		= opt.page_arg  ? opt.page_arg : 'page';
 	var filter_arg = this.filter_arg	= opt.filter_arg  ? opt.filter_arg : 'F';	
+
 	var list = this;
     if(!opt.ignorePopState) // temporary
     {
@@ -446,7 +451,7 @@ window.qwx.list = function(place,opt) {
 		};
 	}
 	var args = qwx.getArgs();
-	this.displayList(args.arg(page_arg), this.json2filter(args.arg(filter_arg)), true);	
+	this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 
 }
 
@@ -562,6 +567,7 @@ window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, d
 			filter_fld.val(val); 
 		} ;	
 	}
+	list.defaultFilter[fld] = default_value;
 	if(modifier) this.filterModifier[fld] = modifier;
 };
 window.qwx.list.prototype.reload = function() { 
@@ -1171,7 +1177,7 @@ window.qwx.imageWidget.prototype.val = function() {
 		return this;
 	}
 }(jQuery);
-
+/* -- editDialog -- */
 window.qwx.editDialog = function (id, opt) { 
 	qwx.widget.call(this, null, opt);
 	this.cid = opt.cid;
@@ -1260,3 +1266,69 @@ window.qwx.editDialog.prototype.constructor = window.qwx.editDialog;
 window.qwx.editDialog.prototype.close = function() { 
 		this.modal.modal('hide');
 }
+/*-- checkboxarray -- */
+window.qwx.checkBoxArray = function(place, opt) {
+	qwx.widget.call(this, place, opt);
+	var el = $('<div class="btn-group" data-toggle="buttons"/>').appendTo(place);
+	this.value = [];
+	var self = this;
+	if(opt.values) {
+		for(var i=0;i<opt.values.length;i++) { var s = opt.values[i];
+			var b = $('<label class="btn btn-default"/>').append( $('<input type="checkbox"/>').prop('value',s.id) ).append('&nbsp;'+s.title);
+			b.appendTo(el);
+			if(s.checked) { self.value.push(s.id); b.addClass('active'); } 
+		}
+	}
+	el.on('click', function() {
+		setTimeout(function() { 
+			el.find('.btn').removeClass('focus'); 
+			self.value = []; 
+			el.find('.btn.active input').each(function() { self.value.push(this.value) });
+			place.trigger('change');
+		}, 0 );	
+	});
+};
+window.qwx.checkBoxArray.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.checkBoxArray.prototype.constructor = window.qwx.checkBoxArray;
+window.qwx.checkBoxArray.prototype.val = function(x) {
+	if(arguments.length==0) {
+		return this.value;
+	} else { 
+		if(x && typeof(x)=='object') {
+			this.place.find('label').removeClass('active');
+			this.value = [];
+			for(var i=0,l=x.length;i<l;i++) { 
+				this.place.find('input[value=' + x[i] + ']').parent().addClass('active');
+				this.value.push(x[i]);
+			}
+		}
+	}
+};
++function($) { 
+	$.fn.qwxCheckBoxArray = function(option) { 
+		if(!option || typeof(option) == 'object') { 
+			this.data('widget', new qwx.checkBoxArray(this, option));
+		} else {
+			var w = this.data('widget');
+			if (option == 'val') {		
+				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+			} else if(option == 'widget') { 
+				return w ? w : null;
+			}
+		}
+		return this;
+	}
+}(jQuery);
+/* -- val() for widgets ---*/
++function($) { 
+	var oldVal = $.fn.val;
+	$.fn.val = function(v) { 
+		var w = $(this).data('widget');
+		if(w) return w.val.apply(w,arguments); 
+		else return oldVal.apply($(this),arguments); 
+	};
+}(jQuery);
+
+
+
+
