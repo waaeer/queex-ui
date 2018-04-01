@@ -1240,6 +1240,8 @@ window.qwx.editDialog = function (id, opt) {
 		var has_err = false;
 		form.find('input[type=text][validate-filled]').each(function() { if(!this.value.match(/\S/)) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
 		form.find('select[validate-selected]').each(function() { if($(this).val() === null) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+		form.find('input[type=radio][validate-selected]').each(function() { if(!attr[this.getAttribute('name')]) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+
 		if(has_err || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
 		}
@@ -1253,10 +1255,10 @@ window.qwx.editDialog = function (id, opt) {
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
-				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
-				form.closest('.modal').modal('hide');
-				window.qwx.closeMessageBox();
-				return true;
+			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
+			form.closest('.modal').modal('hide');
+			window.qwx.closeMessageBox();
+			return true;
 		});
 	};
 	return false;
