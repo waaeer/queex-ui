@@ -1231,16 +1231,17 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.getAfterSave && self.getAfterSave != 'final' ) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
-		form.find('input[type=text],input[type=number],textarea') .each(function() { attr[this.getAttribute('name')] = this.value; });
-		form.find('select').each(function() { attr[this.getAttribute('name')] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
-		form.find('input[type=checkbox]').each(function() { attr[this.getAttribute('name')] = this.checked ? 1 : 0; });
-		form.find('input[type=radio]'   ).each(function() { if(this.checked) attr[this.getAttribute('name')] = this.value; });
-		form.find('[role=widget]').each(function() { attr[this.getAttribute('name')] = $(this).data('widget').val(); });
+		form.find('input[type=text],input[type=number],textarea') .each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.value; });
+		form.find('select').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
+		form.find('input[type=checkbox]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.checked ? 1 : 0; });
+		form.find('input[type=radio]'   ).each(function() { var name=this.getAttribute('name'); if(name && this.checked) attr[name] = this.value; });
+		form.find('[role=widget]').each(function() {  var name=this.getAttribute('name'); if(name) attr[name] = $(this).data('widget').val(); });
 
+console.log('collected attr', attr);
 		var has_err = false;
 		form.find('input[type=text][validate-filled]').each(function() { if(!this.value.match(/\S/)) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-		form.find('select[validate-selected]').each(function() { if($(this).val() === null) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-		form.find('input[type=radio][validate-selected]').each(function() { if(!attr[this.getAttribute('name')]) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+		form.find('select[validate-selected]').each(function() { if($(this).val() === null || $(this).val()==='') { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+		form.find('input[type=radio][validate-selected], [role=widget][validate-selected]').each(function() { if(!attr[this.getAttribute('name')]) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
 
 		if(has_err || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
@@ -1321,12 +1322,62 @@ window.qwx.checkBoxArray.prototype.val = function(x) {
 		return this;
 	}
 }(jQuery);
+
+/* -- date widget -- */
+window.qwx.dateWidget = function(place, opt) { 
+    qwx.widget.call(this, place, opt);
+    place.html('<div class="qwx-calendar"><input class="form-control qwx-input-date"></div>');
+    var div = this.div = place.find('.qwx-calendar');
+    div.datepicker({ 
+        inputs: div.find('input'), 
+        format: 'dd.mm.yyyy' 
+    });
+	var inp = this.inp = div.find('input');
+    div.datepicker().on('changeDate', function(e,m) { 
+        inp.datepicker('hide');
+    });
+};
+window.qwx.dateWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.dateWidget.prototype.constructor = window.qwx.dateWidget;
+window.qwx.dateWidget.prototype.val = function(v) {
+    if (arguments.length == 0 ) {
+        return qwx.date2iso(this.inp.datepicker('getDate'));
+    } else {
+        this.inp.datepicker('setDate', (v instanceof Date) ? v : qwx.iso2date(v) );
+        return this;
+    }
+};
+window.qwx.date2iso = function(jsdate) { 
+    return jsdate ? sprintf("%04d-%02d-%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate()) : null;
+};
+window.qwx.iso2date = function(isodate) { 
+    var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)/);
+    return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3])) : null; 
+};
++function() { 
+    $.fn.qwxDateWidget = function(option) { 
+        if(!option || typeof(option) == 'object') {
+            this.data('widget', new qwx.dateWidget(this, option || {}));
+        } else {
+            var w = this.data('widget');
+            if(option == 'val') { 
+                return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+            } else if(option == 'widget') { 
+				return w ? w : null;
+			}
+			
+        }
+        return this;
+    };
+}(jQuery);
+
+
 /* -- val() for widgets ---*/
 +function($) { 
 	var oldVal = $.fn.val;
 	$.fn.val = function(v) { 
 		var w = $(this).data('widget');
-		if(w) return w.val.apply(w,arguments); 
+		if(w && w.val) return w.val.apply(w,arguments); 
 		else return oldVal.apply($(this),arguments); 
 	};
 }(jQuery);
