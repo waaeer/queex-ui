@@ -5,6 +5,11 @@ if(!window.qwx) { window.qwx = {} }
 		x.one('shown.bs.modal', function() { 
 			modalStack.push(x);
 			this.style.zIndex = 1040 + 10 * modalStack.length;
+			var backdrops = $('.modal-backdrop');
+			var last_backdrop = backdrops[backdrops.length-1];
+			if(last_backdrop) { 
+				last_backdrop.style.zIndex = 1035 + 10 * modalStack.length;
+			}
 			x.data('focus_in', document.activeElement);
 			$(this).find('[autofocus]').focus();
 			var prev = modalStack.length == 1 ? null : modalStack[modalStack.length-2];
@@ -113,13 +118,14 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwxTemplateCache = {};
 	window.qwx.t = function(template,vars) { 
 		if(template.substr(0,1) == '#') { 
-			var t = window.qwxTemplateCache[template.substr(1)];
+			var id = template.substr(1);
+			var t = window.qwxTemplateCache[id];
 			if(!t) {
-				var el = document.getElementById(template.substr(1));
+				var el = document.getElementById(id);
 				if(el) { 
-					t = window.qwxTemplateCache[template.substr(1)] = _.template(el.innerHTML);
+					t = window.qwxTemplateCache[id] = _.template(el.innerHTML);
 				} else { 
-					console.log('No element ', template);
+					console.log('No element ', id);
 					return '';
 				}
 			}	
@@ -130,11 +136,13 @@ if(!window.qwx) { window.qwx = {} }
 		}
 	}
 	window.qwx.template = function(template) { 
-		if(template.substr(0,1) == '#') { 
+		if(template.substr(0,1) == '#') {
+			var id = template.substr(1);
+			var el = document.getElementById(id); 
 			if(el) { 
 				return _.template(el.innerHTML);
 			} else { 
-				console.log('No element ', template);
+				console.log('No element ', id);
 				return '';
 			}
 		} else { 
@@ -177,6 +185,10 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwx.args.prototype.arg = function(key) { 
 		return this.data[key];
 	}
+	window.qwx.args.prototype.args = function() {
+		return this.data;
+	}
+
 	window.qwx.getArgs = function() {
 		return new qwx.args(window.location.search.substr(1));
 	}
@@ -189,9 +201,9 @@ if(!window.qwx) { window.qwx = {} }
 	window.qwx.checkbox_wrap = function(sel, false_null) { 
 		return new qwx.checkBoxWrapper(sel, false_null);		
 	}
-	window.qwx.scrollTo = function(el, speed, complete) { 
+	window.qwx.scrollTo = function(el, speed, complete) {
 		var el=$(el);
-		if(el.length>0) { 
+		if(el.length>0) {
 			$('html, body').animate({
     		    scrollTop: el.offset().top
     		}, speed || 2000, 'swing', complete);
@@ -215,7 +227,11 @@ window.qwx.tr = function(msg) {
 }
 window.qwx.ajax = function(opt) { 
 	if(opt.block) { 
-		qwx.messageBox(null, (opt.block.message ? opt.block.message : qwx.tr('Подождите...')), false, 'wait');
+		if(typeof opt.block == 'function') {
+			opt.block();
+		} else {
+			qwx.messageBox(null, (opt.block.message ? opt.block.message : qwx.tr('Подождите...')), false, 'wait');
+		}
 	}
 	$.ajax({
 		url: opt.url, 
@@ -244,7 +260,7 @@ window.qwx.ajax = function(opt) {
 					} else {
 						rc = true;
 					}
-					if(opt.block ) { 
+					if(opt.block && rc) { 
 						qwx.closeMessageBox();
 					}
 			}
@@ -400,12 +416,15 @@ window.qwx.list = function(place,opt) {
 	this.editDialog     = opt.editDialog;
 	this.postprocessQuery = opt.postprocessQuery;
 	this.onBeforeDisplayList = opt.onBeforeDisplayList;
-	this.data           = opt.data; // simply load data for custom methods and templates
+	this.getList        = opt.getList; // function for use instead of default api
+	this.data           = opt.data; // simply load data for custom methods and templates	
+	this.defaultFilter = {};
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
 	}
 	var page_arg   = this.page_arg		= opt.page_arg  ? opt.page_arg : 'page';
 	var filter_arg = this.filter_arg	= opt.filter_arg  ? opt.filter_arg : 'F';	
+
 	var list = this;
     if(!opt.ignorePopState) // temporary
     {
@@ -417,10 +436,9 @@ window.qwx.list = function(place,opt) {
     }
 	
 	if (this.editDialog) { 
-		var d_opt = this.editDialog;
 		this.postDisplayRow  =  function(el,o) { 
 				list.enableRowButtons(el,o);
-				if(d_opt.postDisplayRow) d_opt.postDisplayRow.call(list, el, o);
+				if(opt.postDisplayRow) opt.postDisplayRow.call(list, el, o);
 		};
 		this.enableEditor = function(place,o,success_cb) {
 			return list.openEditDialog(o.id, success_cb);
@@ -433,7 +451,7 @@ window.qwx.list = function(place,opt) {
 		};
 	}
 	var args = qwx.getArgs();
-	this.displayList(args.arg(page_arg), this.json2filter(args.arg(filter_arg)), true);	
+	this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 
 }
 
@@ -471,7 +489,11 @@ window.qwx.list.prototype.getData = function (page,filter,cb) {
 	if(query.__dont_get_data) { 
 		cb({list:[],n:0});
 	} else { 
-		this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, cb);			
+		if(this.getList) { 
+			this.getList(query, page, cb);
+		} else { 
+			this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, cb);
+		}
 	}
 }	
 
@@ -545,6 +567,7 @@ window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, d
 			filter_fld.val(val); 
 		} ;	
 	}
+	list.defaultFilter[fld] = default_value;
 	if(modifier) this.filterModifier[fld] = modifier;
 };
 window.qwx.list.prototype.reload = function() { 
@@ -565,15 +588,15 @@ window.qwx.list.prototype.setObject = function(obj, opt) {
 		this.reload();	
 	} else {
 		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
-		if(opt.ifnot == 'top') { 
-			new_row.prependTo(this.place);			
-		} else { 
+		if(opt.ifnot == 'top') {
+			new_row.prependTo(this.place);
+		} else {
 			new_row.appendTo(this.place);
 		}
 		if(this.makeRowSelectable) this.makeRowSelectable(new_row);
-		if(this.postDisplayRow) { 
+		if(this.postDisplayRow) {
 			this.postDisplayRow.call(this, new_row, obj );
-		}	
+		}
 		return true;
 	}
 
@@ -653,12 +676,12 @@ window.qwx.selectWidget = function(place,opt) {
 			var d = opt.data[i];
 			$('<option/>',{value:d[0],selected:(d[0]==val)}).html(d[1]).appendTo(sel);
 		}		
-		sel.on('change', function(ev) { 
+		sel.on('change', function(ev) {
 			var option = sel[0].options[sel[0].selectedIndex];
 			var id = option.value; 
 			place.trigger('change', id && id != '' ? {id:id, text:option.text} : null);
 			ev.stopPropagation();
-			return true; 
+			return true;
 		});
 	}
 };
@@ -674,17 +697,17 @@ window.qwx.selectWidget.prototype.val = function() {
 		return this.sel.val();
 	}
 };
-window.qwx.selectWidget.prototype.object_val = function() { 
+window.qwx.selectWidget.prototype.object_val = function() {
 	if(arguments.length==1) {
 		var v = arguments[0];
 		if(_.isObject(v)) v = v.id;
 		return this.sel.val(v);
-	} else { 
+	} else {
 		var sel = this.sel[0];
 		return { id: sel.options[sel.selectedIndex].value, text: sel.options[sel.selectedIndex].text };
 	}
 };
-window.qwx.selectWidget.prototype.focus = function() { 
+window.qwx.selectWidget.prototype.focus = function() {
     this.sel[0].focus();
 };
 
@@ -696,13 +719,13 @@ window.qwx.selectWidget.prototype.focus = function() {
 			var w = this.data('widget');
 			if (option == 'val') {		
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-			} else if (option == 'object_val') {		
+			} else if (option == 'object_val') {
 				return arguments.length == 1 ? w.object_val() : w.object_val(arguments[1]);
 			} else if(option == 'widget') { 
 				return w ? w : null;
-			} else if(option == 'focus') { 
+			} else if(option == 'focus') {
 				w.focus();
-			} else { 
+			} else {
 				console.log('Method ' + option + ' does not exist in SelectWidget');
 			}
 		}
@@ -724,42 +747,40 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.menu = menu;
 	this.btn  = btn;
 	var self = this;
-	function setmenuhandlers(items) { 
+	function setmenuhandlers(items) {
 		items.on('click', function(ev) {
 			if(!$(this).hasClass('not-selectable')) {
 				self.value = val = this.getAttribute('data-id');
 				if(self.value == '') self.value = val =  null;
 				menu.find('li').removeClass('selected');
 				var txt = $(this).addClass('selected').find('label').html();
-				
 				selected.html( txt );
 				place.trigger('change', { id: self.value, el: this, text: txt });
-//				base.dropdown('toggle'); 
+//				base.dropdown('toggle');
 			}
 		});
 	}
-	function select_current() { 
-		if(val) { 
+	function select_current() {
+		if(val) {
 			menu.find('li[data-id="' + val + '"]').addClass('selected');
-    	}
+		}
 	}
 
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
 		setmenuhandlers(menu.find('li'));
 		select_current();
-	} else { 
-		base.on('show.bs.dropdown',function() { 
-			if(opt.getData) { 
-				opt.getData(function(data) { 
+	} else {
+		base.on('show.bs.dropdown',function() {
+			if(opt.getData) {
+				opt.getData(function(data) {
 					menu.html(qwx.t(opt.template, { list: data , el: self}));
 					setmenuhandlers(menu.find('li'));
 					select_current();
 				});
-			} 
+			}
 		});
 	}
-
 };
 window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.pseudoSelectWidget.prototype.constructor = window.qwx.pseudoSelectWidget;
@@ -824,8 +845,8 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		limit: (opt.limit || 5),
 		source: function(q,sync_cb,async_cb) { 			
 			var args = [q];
-			if(opt.preprocessQuery) { args = opt.preprocessQuery(args); } 
-			qwx.ajax({url: opt.url , data: args, success: function(r) { 
+			if(opt.preprocessQuery) { args = opt.preprocessQuery(args); }
+			qwx.ajax({url: opt.url , data: args, success: function(r) {
 				if(opt.preprocessList) { r.list = opt.preprocessList(q, r.list); }
 				async_cb(r.list);
 			}});
@@ -897,10 +918,10 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 		if(this.onSelect) this.onSelect(o);
 	}
 };
-window.qwx.autocompleteWidget.prototype.close = function() { 
+window.qwx.autocompleteWidget.prototype.close = function() {
 	this.inp.typeahead('close');
 };
-window.qwx.autocompleteWidget.prototype.focus = function() { 
+window.qwx.autocompleteWidget.prototype.focus = function() {
     this.inp[0].focus();
 };
 
@@ -914,11 +935,11 @@ window.qwx.autocompleteWidget.prototype.focus = function() {
 			var w = this.data('widget');
 			if (option == 'val') {		
 				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-			} else if(option == 'widget') { 
+			} else if(option == 'widget') {
 				return w ? w : null;
-			} else if(option == 'focus') { 
+			} else if(option == 'focus') {
 				w.focus();
-			} else { 
+			} else {
 				console.log('Method ' + option + ' does not exist in AutocompleteWidget');
 			}
 		}
@@ -1156,7 +1177,7 @@ window.qwx.imageWidget.prototype.val = function() {
 		return this;
 	}
 }(jQuery);
-
+/* -- editDialog -- */
 window.qwx.editDialog = function (id, opt) { 
 	qwx.widget.call(this, null, opt);
 	this.cid = opt.cid;
@@ -1193,12 +1214,12 @@ window.qwx.editDialog = function (id, opt) {
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
 		modal.one('hidden.bs.modal', function() { modal.remove();  });
-		modal.find('.btn-save,[role=saveButton]').on('click', function() { 
+		modal.find('.btn-save,[role=saveButton]').on('click', function() {
 			self.saveDialog(this );
 		});
 	}
 	if(id) { 
-		this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) { 
+		this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {
 			openModal(r.obj);				
 		});
 	} else { 	
@@ -1210,15 +1231,18 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.getAfterSave && self.getAfterSave != 'final' ) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
-		form.find('input[type=text],input[type=number],textarea') .each(function() { attr[this.getAttribute('name')] = this.value; });
-		form.find('select').each(function() { attr[this.getAttribute('name')] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
-		form.find('input[type=checkbox]').each(function() { attr[this.getAttribute('name')] = this.checked ? 1 : 0; });
-		form.find('input[type=radio]'   ).each(function() { if(this.checked) attr[this.getAttribute('name')] = this.value; });
-		form.find('[role=widget]').each(function() { attr[this.getAttribute('name')] = $(this).data('widget').val(); });
+		form.find('input[type=text],input[type=number],textarea') .each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.value; });
+		form.find('select').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
+		form.find('input[type=checkbox]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.checked ? 1 : 0; });
+		form.find('input[type=radio]'   ).each(function() { var name=this.getAttribute('name'); if(name && this.checked) attr[name] = this.value; });
+		form.find('[role=widget]').each(function() {  var name=this.getAttribute('name'); if(name) attr[name] = $(this).data('widget').val(); });
 
+console.log('collected attr', attr);
 		var has_err = false;
 		form.find('input[type=text][validate-filled]').each(function() { if(!this.value.match(/\S/)) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-		form.find('select[validate-selected]').each(function() { if($(this).val() === null) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+		form.find('select[validate-selected]').each(function() { if($(this).val() === null || $(this).val()==='') { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+		form.find('input[type=radio][validate-selected], [role=widget][validate-selected]').each(function() { if(!attr[this.getAttribute('name')]) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
+
 		if(has_err || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
 		}
@@ -1227,12 +1251,15 @@ window.qwx.editDialog = function (id, opt) {
 			[	'save', self.cid,   id, attr ],
 		];
 			
-		if (self.collectData) self.collectData(form, attr, ops);
+		if (self.collectData) { 
+			try { self.collectData(form, attr, ops); } catch(err) { window.qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
+		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
-				self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
-				form.closest('.modal').modal('hide');
-				return true;
+			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
+			form.closest('.modal').modal('hide');
+			window.qwx.closeMessageBox();
+			return true;
 		});
 	};
 	return false;
@@ -1242,3 +1269,119 @@ window.qwx.editDialog.prototype.constructor = window.qwx.editDialog;
 window.qwx.editDialog.prototype.close = function() { 
 		this.modal.modal('hide');
 }
+/*-- checkboxarray -- */
+window.qwx.checkBoxArray = function(place, opt) {
+	qwx.widget.call(this, place, opt);
+	var el = $('<div class="btn-group" data-toggle="buttons"/>').appendTo(place);
+	this.value = [];
+	var self = this;
+	if(opt.values) {
+		for(var i=0;i<opt.values.length;i++) { var s = opt.values[i];
+			var b = $('<label class="btn btn-default"/>').append( $('<input type="checkbox"/>').prop('value',s.id) ).append('&nbsp;'+s.title);
+			b.appendTo(el);
+			if(s.checked) { self.value.push(s.id); b.addClass('active'); } 
+		}
+	}
+	el.on('click', function() {
+		setTimeout(function() { 
+			el.find('.btn').removeClass('focus'); 
+			self.value = []; 
+			el.find('.btn.active input').each(function() { self.value.push(this.value) });
+			place.trigger('change');
+		}, 0 );	
+	});
+};
+window.qwx.checkBoxArray.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.checkBoxArray.prototype.constructor = window.qwx.checkBoxArray;
+window.qwx.checkBoxArray.prototype.val = function(x) {
+	if(arguments.length==0) {
+		return this.value;
+	} else { 
+		if(x && typeof(x)=='object') {
+			this.place.find('label').removeClass('active');
+			this.value = [];
+			for(var i=0,l=x.length;i<l;i++) { 
+				this.place.find('input[value=' + x[i] + ']').parent().addClass('active');
+				this.value.push(x[i]);
+			}
+		}
+	}
+};
++function($) { 
+	$.fn.qwxCheckBoxArray = function(option) { 
+		if(!option || typeof(option) == 'object') { 
+			this.data('widget', new qwx.checkBoxArray(this, option));
+		} else {
+			var w = this.data('widget');
+			if (option == 'val') {		
+				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+			} else if(option == 'widget') { 
+				return w ? w : null;
+			}
+		}
+		return this;
+	}
+}(jQuery);
+
+/* -- date widget -- */
+window.qwx.dateWidget = function(place, opt) { 
+    qwx.widget.call(this, place, opt);
+    place.html('<div class="qwx-calendar"><input class="form-control qwx-input-date"></div>');
+    var div = this.div = place.find('.qwx-calendar');
+    div.datepicker({ 
+        inputs: div.find('input'), 
+        format: 'dd.mm.yyyy' 
+    });
+	var inp = this.inp = div.find('input');
+    div.datepicker().on('changeDate', function(e,m) { 
+        inp.datepicker('hide');
+    });
+};
+window.qwx.dateWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.dateWidget.prototype.constructor = window.qwx.dateWidget;
+window.qwx.dateWidget.prototype.val = function(v) {
+    if (arguments.length == 0 ) {
+        return qwx.date2iso(this.inp.datepicker('getDate'));
+    } else {
+        this.inp.datepicker('setDate', (v instanceof Date) ? v : qwx.iso2date(v) );
+        return this;
+    }
+};
+window.qwx.date2iso = function(jsdate) { 
+    return jsdate ? sprintf("%04d-%02d-%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate()) : null;
+};
+window.qwx.iso2date = function(isodate) { 
+    var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)/);
+    return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3])) : null; 
+};
++function() { 
+    $.fn.qwxDateWidget = function(option) { 
+        if(!option || typeof(option) == 'object') {
+            this.data('widget', new qwx.dateWidget(this, option || {}));
+        } else {
+            var w = this.data('widget');
+            if(option == 'val') { 
+                return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+            } else if(option == 'widget') { 
+				return w ? w : null;
+			}
+			
+        }
+        return this;
+    };
+}(jQuery);
+
+
+/* -- val() for widgets ---*/
++function($) { 
+	var oldVal = $.fn.val;
+	$.fn.val = function(v) { 
+		var w = $(this).data('widget');
+		if(w && w.val) return w.val.apply(w,arguments); 
+		else return oldVal.apply($(this),arguments); 
+	};
+}(jQuery);
+
+
+
+
