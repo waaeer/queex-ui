@@ -503,6 +503,8 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 	var postDisplayRow = this.postDisplayRow;
 	list.filter = _.extend({},filter);
 	if(filter_set_back) list.setBackFilters();
+	if(this.paused) return; 
+
     if(list.onBeforeDisplayList) list.onBeforeDisplayList(list);
 	list.place.trigger('beforeDisplayList', { page: page, filter: filter });
 
@@ -546,7 +548,7 @@ window.qwx.list.prototype.setFilter = function(fld,val) {
 };
 window.qwx.list.prototype.setBackFilters = function() {
 	for(var fld in this.filterSetBack) { 
-		this.filterSetBack[fld](this.filter[fld]);
+ 		this.filterSetBack[fld](this.filter[fld]);
 	}
 };
 window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, default_value) { 
@@ -556,14 +558,14 @@ window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, d
 		filter_fld.on('click', function() { list.setFilter(fld, filter_fld[0].checked ? 1 : 0);  });
 		this.filterSetBack[fld] = function() {
         	var val = list.filter[fld]; 
-			if(val===undefined && default_value !== undefined) val=list.filter[fld]=default_value;
+			if(list.filter.length==0  && default_value !== undefined) val=list.filter[fld]=default_value;
 			filter_fld[0].checked = (val && val > 0 );
 		};
 	} else { 
 		filter_fld.on('change', function() { list.setFilter(fld, filter_fld.val()); });
 		this.filterSetBack[fld] = function() { 
 			var val = list.filter[fld]; 
-			if(val===undefined && default_value !== undefined) val=list.filter[fld]=default_value;
+			if(list.filter.length==0 && default_value !== undefined) val=list.filter[fld]=default_value;
 			filter_fld.val(val); 
 		} ;	
 	}
@@ -624,6 +626,12 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 
 };
 
+window.qwx.list.prototype.pause = function() {
+	this.paused = true;
+};
+window.qwx.list.prototype.resume = function() {
+    this.paused = false;
+};
 
 
 +function($) {
@@ -664,7 +672,6 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 
 window.qwx.selectWidget = function(place,opt) { 
 	qwx.widget.call(this, place, opt);
-	place.attr('role','widget');
 	var sel;
 	var val = opt.val;
 	if(opt.data) {
@@ -735,10 +742,9 @@ window.qwx.selectWidget.prototype.focus = function() {
 
 window.qwx.pseudoSelectWidget = function(place,opt) { 
 	qwx.widget.call(this, place, opt);
-	place.attr('role','widget');
 	var sel;
-	var val = opt.val;
 	this.nullText = opt.nullText;
+	this.getData  = opt.getData;
 	var base = $('<div class="dropdown" data-dropdown="dropdown"/>').appendTo(place.html(''));
 	var btn  = $('<button class="btn dropdown-toggle" type="button" data-toggle="dropdown" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
 	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
@@ -747,6 +753,17 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.menu = menu;
 	this.btn  = btn;
 	var self = this;
+	self.fillMenu = function(val, onload) { 
+		if(opt.getData) {
+			opt.getData(function(data) {
+				self.gotData = true;
+				menu.html(qwx.t(opt.template, { list: data , el: self}));
+				setmenuhandlers(menu.find('li'));
+				select_current(val);
+				if(onload) onload();
+			});
+		}
+	};
 	function setmenuhandlers(items) {
 		items.on('click', function(ev) {
 			if(!$(this).hasClass('not-selectable')) {
@@ -760,27 +777,25 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 			}
 		});
 	}
-	function select_current() {
+	function select_current(val) {
 		if(val) {
 			menu.find('li[data-id="' + val + '"]').addClass('selected');
 		}
 	}
 
+
+
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
 		setmenuhandlers(menu.find('li'));
-		select_current();
+		select_current(opt.val);
+		if(onload) onload();
 	} else {
 		base.on('show.bs.dropdown',function() {
-			if(opt.getData) {
-				opt.getData(function(data) {
-					menu.html(qwx.t(opt.template, { list: data , el: self}));
-					setmenuhandlers(menu.find('li'));
-					select_current();
-				});
-			}
+			self.fillMenu(opt.val);
 		});
 	}
+	
 };
 window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.pseudoSelectWidget.prototype.constructor = window.qwx.pseudoSelectWidget;
@@ -790,17 +805,26 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 		var v = arguments[0];
 		if(_.isObject(v)) v = v.id;
 		this.value = v;
-		var is_set = false;
-		var btn = this.btn;
-		this.menu.find('li[data-id]').each(function() { 
-			if (this.getAttribute('data-id')==v) { 
-				btn.find('span.selected-option-text').html( $(this).addClass('selected').find('label').html() );
-				is_set = true;
-			} else {
-				$(this).removeClass('selected'); 
-			}
-		});
-		if(!is_set || v===null) this.btn.find('span.selected-option-text').html(this.nullText);
+		var self = this;
+		function set_value() { 
+			var is_set = false;
+			var btn = self.btn;
+			self.menu.find('li[data-id]').each(function() { 
+				if (this.getAttribute('data-id')==v) { 
+					btn.find('span.selected-option-text').html( $(this).addClass('selected').find('label').html() );
+					is_set = true;
+				} else {
+					$(this).removeClass('selected'); 
+				}
+			});
+			if(!is_set || v===null) btn.find('span.selected-option-text').html(self.nullText);
+		};
+		if(this.getData && !this.gotData) { 
+			this.fillMenu(v, set_value);
+		} else { 
+			set_value();
+		}
+
 	} else { 
 		return this.value;
 	}
@@ -830,7 +854,6 @@ window.qwx.autocompleteWidget = function(place,opt) {
 	var sel = this.inp = sel = $('<input type="text" value=""/>', opt.attr).css('width', '100%').appendTo(place.html(''));
     if(opt.inputClassName) sel.addClass(opt.inputClassName);
 
-	place.attr('role','widget');
 	sel.typeahead({
 		minLength: (opt.minLength || 1), 
 		highlight: true, 
@@ -1139,7 +1162,6 @@ window.qwx.imageWidget = function(place, opt) {
 	btn.on('postUpload', function(event, data) {
 		btn.parent().find('.imgplace').html('').append($('<img/>').attr({ src:opt.uploadURI + data.path }));
 	});
-	place.attr('role','widget');
 };
 window.qwx.imageWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.imageWidget.prototype.constructor = window.qwx.imageWidget;
@@ -1237,7 +1259,6 @@ window.qwx.editDialog = function (id, opt) {
 		form.find('input[type=radio]'   ).each(function() { var name=this.getAttribute('name'); if(name && this.checked) attr[name] = this.value; });
 		form.find('[role=widget]').each(function() {  var name=this.getAttribute('name'); if(name) attr[name] = $(this).data('widget').val(); });
 
-console.log('collected attr', attr);
 		var has_err = false;
 		form.find('input[type=text][validate-filled]').each(function() { if(!this.value.match(/\S/)) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
 		form.find('select[validate-selected]').each(function() { if($(this).val() === null || $(this).val()==='') { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
@@ -1354,6 +1375,14 @@ window.qwx.iso2date = function(isodate) {
     var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)/);
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3])) : null; 
 };
+window.qwx.time2iso = function(jsdate) {
+    return jsdate ? sprintf("%04d-%02d-%02d %02d:%02d:%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate(), jsdate.getHour(), jsdate.getMinute(), jsdate.getSecond() ) : null;
+};
+window.qwx.iso2time = function(isodate) {
+    var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)[T\s](\d?\d):(\d\d):(\d\d)/);
+    return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6])) : null;
+};
+
 +function() { 
     $.fn.qwxDateWidget = function(option) { 
         if(!option || typeof(option) == 'object') {
