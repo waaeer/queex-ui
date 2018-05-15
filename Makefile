@@ -6,7 +6,8 @@ QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
 
 BOOTSTRAP=3.3.7
-TINYMCE=4.7.11
+BOOTSTRAP4=4.0.0
+TINYMCE=4.7.12
 JQUERY=1.12.4
 BOOTSTRAP_DP=1.7.1
 SPRINTF_JS=1.1.1
@@ -20,7 +21,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js 
+install_3rdparty: install_tinymce4_patched install_jstools install_bootstrap3 install_bootstrap4 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js 
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
@@ -92,6 +93,20 @@ install_bootstrap3:
 	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP)/bootstrap-$(BOOTSTRAP)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP)-dist.zip -d /tmp && cd /tmp/bootstrap-$(BOOTSTRAP)-dist && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/bootstrap/{} \; )
 	( rm -rf /tmp/bootstrap-$(BOOTSTRAP)-dist* )
 
+install_bootstrap4:
+	( if [ ! -d "$(QLIB)/j/bootstrap4" ]; then $(SUDO) mkdir $(QLIB)/j/bootstrap4 ; fi )
+	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QLIB)/j/bootstrap4 && $(SUDO) chown :devel $(QLIB)/j/bootstrap4; fi )
+	( rm -rf /tmp/bootstrap-$(BOOTSTRAP4)-dist* /tmp/dist)
+	( mkdir /tmp/bootstrap-$(BOOTSTRAP4)-dist )
+	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP4)/bootstrap-$(BOOTSTRAP4)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip -d /tmp/bootstrap-$(BOOTSTRAP4)-dist && cd /tmp/bootstrap-$(BOOTSTRAP4)-dist && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/bootstrap4/{} \; )
+	( rm -rf /tmp/bootstrap-$(BOOTSTRAP4)-dist* )
+
+install_popper:
+	( if [ ! -d /tmp/jstools-qui ]; then mkdir /tmp/jstools-qui; fi )
+	wget -c -O /tmp/jstools-qui/popper.min.js https://unpkg.com/popper.js/dist/umd/popper.min.js
+	(cd /tmp/jstools-qui && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
+	(rm -rf /tmp/jstools-qui)
+
 install_jstools:
 	( if [ ! -d /tmp/jstools-qui ]; then mkdir /tmp/jstools-qui; fi )
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
@@ -108,7 +123,7 @@ install_jstools:
 #	(cd /tmp && rm -rf Bootstrap-Image-Gallery && git clone https://github.com/blueimp/Bootstrap-Image-Gallery.git && cd Bootstrap-Image-Gallery && cp js/bootstrap-image-gallery.min.js css/bootstrap-image-gallery.min.css  /tmp/jstools-qui/)
 	
 	(cd /tmp/jstools-qui && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
-#	(rm -rf /tmp/jstools-qui)
+	(rm -rf /tmp/jstools-qui)
 
 install_bootstrap_datepicker:
 	( if [ ! -d /tmp/bsdp ]; then mkdir /tmp/bsdp; fi )
