@@ -867,12 +867,16 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		displayKey: (opt.displayKey || 'title'),
 		limit: (opt.limit || 5),
 		source: function(q,sync_cb,async_cb) { 			
-			var args = [q];
-			if(opt.preprocessQuery) { args = opt.preprocessQuery(args); }
-			qwx.ajax({url: opt.url , data: args, success: function(r) {
-				if(opt.preprocessList) { r.list = opt.preprocessList(q, r.list); }
-				async_cb(r.list);
-			}});
+			if(opt.search) { 
+				opt.search(q, function(list) { async_cb(list); });
+			} else { 
+				var args = [q];
+				if(opt.preprocessQuery) { args = opt.preprocessQuery(args); }
+				qwx.ajax({url: opt.url , data: args, success: function(r) {
+					if(opt.preprocessList) { r.list = opt.preprocessList(q, r.list); }
+					async_cb(r.list);
+				}});
+			}
 		},
 		templates: {
 			suggestion: opt.suggestionHTML
