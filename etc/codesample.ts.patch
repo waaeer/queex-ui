@@ -1,0 +1,99 @@
+diff -ur tinymce/src/plugins/codesample/main/ts/core/CodeSample.ts tinymce.new/src/plugins/codesample/main/ts/core/CodeSample.ts
+--- tinymce/src/plugins/codesample/main/ts/core/CodeSample.ts	2018-04-11 11:52:39.000000000 +0300
++++ tinymce.new/src/plugins/codesample/main/ts/core/CodeSample.ts	2018-04-24 00:20:35.722277440 +0300
+@@ -22,19 +22,19 @@
+   return null;
+ };
+ 
+-const insertCodeSample = function (editor, language, code) {
++const insertCodeSample = function (editor, language, code, numeration) {
+   editor.undoManager.transact(function () {
+     const node = getSelectedCodeSample(editor);
+ 
+     code = DOMUtils.DOM.encode(code);
+ 
+     if (node) {
+-      editor.dom.setAttrib(node, 'class', 'language-' + language);
++      editor.dom.setAttrib(node, 'class', 'language-' + language + (numeration ? ' line-numbers' : ''));
+       node.innerHTML = code;
+       Prism.highlightElement(node);
+       editor.selection.select(node);
+     } else {
+-      editor.insertContent('<pre id="__new" class="language-' + language + '">' + code + '</pre>');
++      editor.insertContent('<pre id="__new" class="language-' + language + (numeration ? ' line-numbers' : '') + '">' + code + '</pre>');
+       editor.selection.select(editor.$('#__new').removeAttr('id')[0]);
+     }
+   });
+@@ -54,4 +54,4 @@
+   getSelectedCodeSample,
+   insertCodeSample,
+   getCurrentCode
+-};
+\ В конце файла нет новой строки
++};
+diff -ur tinymce/src/plugins/codesample/main/ts/core/Languages.ts tinymce.new/src/plugins/codesample/main/ts/core/Languages.ts
+--- tinymce/src/plugins/codesample/main/ts/core/Languages.ts	2018-04-11 11:52:39.000000000 +0300
++++ tinymce.new/src/plugins/codesample/main/ts/core/Languages.ts	2018-04-24 00:33:54.284216384 +0300
+@@ -41,7 +41,20 @@
+   return '';
+ };
+ 
++const getCurrentLineNumeration = function (editor) {
++  let matches;
++  const node = CodeSample.getSelectedCodeSample(editor);
++
++  if (node) {
++    matches = node.className.match(/line-numbers/);
++    return matches ? true : false;
++  }
++
++  return false;
++};
++
+ export default {
+   getLanguages,
+-  getCurrentLanguage
+-};
+\ В конце файла нет новой строки
++  getCurrentLanguage,
++  getCurrentLineNumeration
++};
+diff -ur tinymce/src/plugins/codesample/main/ts/ui/Dialog.ts tinymce.new/src/plugins/codesample/main/ts/ui/Dialog.ts
+--- tinymce/src/plugins/codesample/main/ts/ui/Dialog.ts	2018-04-11 11:52:39.000000000 +0300
++++ tinymce.new/src/plugins/codesample/main/ts/ui/Dialog.ts	2018-04-24 00:34:43.044371190 +0300
+@@ -19,6 +19,7 @@
+     const currentLanguage = Languages.getCurrentLanguage(editor);
+     const currentLanguages = Languages.getLanguages(editor);
+     const currentCode = CodeSample.getCurrentCode(editor);
++    const currentLineNumeration = Languages.getCurrentLineNumeration(editor);
+ 
+     editor.windowManager.open({
+       title: 'Insert/Edit code sample',
+@@ -36,7 +37,13 @@
+           value: currentLanguage,
+           values: currentLanguages
+         },
+-
++        {
++          type: 'checkbox',
++          name: 'numeration',
++          label: 'Line numbers',
++          maxWidth: 200,
++          value: currentLineNumeration
++        },
+         {
+           type: 'textbox',
+           name: 'code',
+@@ -51,8 +58,8 @@
+         }
+       ],
+       onSubmit (e) {
+-        CodeSample.insertCodeSample(editor, e.data.language, e.data.code);
++        CodeSample.insertCodeSample(editor, e.data.language, e.data.code, e.data.numeration === 1);
+       }
+     });
+   }
+-};
+\ В конце файла нет новой строки
++};
+

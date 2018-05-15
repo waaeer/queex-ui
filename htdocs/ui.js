@@ -21,6 +21,9 @@ if(!window.qwx) { window.qwx = {} }
 					prev.off('keydown.dismiss.bs.modal');
 				}
 			}
+			if(x.data('hideonshow')) { 
+				x.modal('hide');
+			}
 			x.data('isShown', true);
 		});
 		x.one('hidden.bs.modal', function() { 
@@ -39,6 +42,12 @@ if(!window.qwx) { window.qwx = {} }
 			modalBox($(this), option);
 		} else if (option == 'isShown') {
 			return $(this).data('isShown');
+		} else if (option == 'hide') { 
+			if ($(this).data('isShown')) { 
+				$(this).modal('hide');
+			} else { 
+				$(this).data('hideonshow', true);
+			}
 		} else { 
 			$(this).modal(option);
 		}
@@ -47,17 +56,21 @@ if(!window.qwx) { window.qwx = {} }
 	$.fn.makeModal = function(option) { 
 		var middle = this;
 		var width = option && option.width || '60%';
+
 		var modal = $('<div/>');
 		modal.addClass('modal fade messageBox').html(
 ' <div class="modal-dialog" style="width:' + width + ';"><div class="modal-content"><div class="modal-header">' + 
-'		 <h4 class="modal-title"></h4></div><div class="modal-body"></div><div class="modal-footer">' + 
+'		 <h4 class="modal-title"></h4>' + 
+(option && option.topClose ? '<button type="button" class="btn btn-light btn-sm" data-dismiss="modal" style="float:right;"><i class="fa fa-times"></i></button>' : '') +
+'</div><div class="modal-body"></div><div class="modal-footer">' + 
 (option && option.okButton ? 
 '		 <button type="button" style="float: left;" class="btn ' + (option.okButtonClass || 'btn-primary') + ' btn-save">' + option.okButton + '</button>' : 
  ( option && option.okButtons ? _.map(option.okButtons, function(x) { return '<button type="button" style="float: left;" class="btn ' +  (_.escape(x.btnClass) || 'btn-primary btn-save') + '">' + x.label + '</button>'} ).join(' ')
    : ''
  )
-) + 
-'        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>' +
+) + (!option || ! option.topClose ?
+'        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>' : '' 
+)+
 '      </div></div></div></div>'
 		).appendTo($('body')).find('.modal-body').append(middle);
 		if(option && option.title) modal.find('.modal-title').html(option.title);
@@ -79,7 +92,7 @@ if(!window.qwx) { window.qwx = {} }
 '      </div></div></div></div>'
 		).appendTo($('body'));
 		return messageBoxElement;
-	}		
+	};		
 	window.qwx.messageBox = function(title,text,close,style_opt) {
 		var div = init();
 		var h = div.find('.modal-header'), f=div.find('.modal-footer'), b=div.find('.modal-body');
@@ -89,7 +102,7 @@ if(!window.qwx) { window.qwx = {} }
 		if(style_opt && style_opt.match(/wait/))  b.addClass('waiting'); else b.removeClass('waiting');
 		if(style_opt && style_opt.match(/error/)) {
 			div.addClass('error'); 
-			b.prepend('<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>');
+			b.prepend('<span class="fa fa-exclamation-circle" aria-hidden="true"></span>');
 		} else {
 			div.removeClass('error');
 		}
@@ -98,23 +111,28 @@ if(!window.qwx) { window.qwx = {} }
 			else  f.hide();
 		f.find('.btn-success').hide();
 		f.find('.btn-success').off('click');
+		div[0].focus();
+		f.find('.btn-default').each(function() { this.focus();});
 		div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });
-	}
+	};
+	window.qwx.getMessageBox = function() { 
+		return init();
+	};
 	window.qwx.closeMessageBox = function() { 
-		init().modal('hide');
-	}
+		init().modalBox('hide');
+	};
 	window.qwx.confirmBox = function(title,text,action) {
 		var div = init();
 		var h = div.find('.modal-header'), f=div.find('.modal-footer'), b=div.find('.modal-body');
 		if(title) {  h.show().find('.modal-title').html(title); } 
 		else  h.hide();
 		b.html(text);
-		b.prepend('<span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>');
+		b.prepend('<span class="fa fa-question-circle" aria-hidden="true"></span>');
 		f.show();
 		f.find('.btn-success').show();
 		f.find('.btn-success').one('click', function() { action(); div.modal('hide'); });
 		div.modalBox({keyboard: true, backdrop:  'static' });
-	}
+	};
 	window.qwxTemplateCache = {};
 	window.qwx.t = function(template,vars) { 
 		if(template.substr(0,1) == '#') { 
@@ -418,6 +436,7 @@ window.qwx.list = function(place,opt) {
 	this.onBeforeDisplayList = opt.onBeforeDisplayList;
 	this.getList        = opt.getList; // function for use instead of default api
 	this.data           = opt.data; // simply load data for custom methods and templates	
+
 	this.defaultFilter = {};
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
@@ -753,11 +772,14 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.menu = menu;
 	this.btn  = btn;
 	var self = this;
+	
 	self.fillMenu = function(val, onload) { 
+		self.obyid = {};
 		if(opt.getData) {
 			opt.getData(function(data) {
 				self.gotData = true;
 				menu.html(qwx.t(opt.template, { list: data , el: self}));
+				for(var i=0;i<data.length;i++) self.obyid[data[i].id] = data[i];
 				setmenuhandlers(menu.find('li'));
 				select_current(val);
 				if(onload) onload();
@@ -828,6 +850,9 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 	} else { 
 		return this.value;
 	}
+};
+window.qwx.pseudoSelectWidget.prototype.objectVal = function() { 
+	return this.value ? this.obyid[this.value] : null;
 };
 
 +function($) { 
@@ -1035,7 +1060,7 @@ window.qwx.labelsWidget.prototype.addValue = function(id,text) {
 	var item = $('<div class="labels-item"/>').attr('data-id',id) ;
 	if(this.embeddedAutocomplete) item.insertBefore(this.embeddedAutocomplete); else item.appendTo(this.labelplace);
 	var self = this;
-	$('<span class="labels-item-delete glyphicon glyphicon-remove"/>').on('click',function() { 
+	$('<span class="labels-item-delete fa fa-trash"/>').on('click',function() { 
 		item.fadeOut(400, function() {
 			item.remove(); self.labelplace.trigger('resize'); 
 		} ); 
@@ -1217,26 +1242,32 @@ window.qwx.editDialog = function (id, opt) {
 	this.templateOpt      = opt.templateOpt;
 	this.validator        = opt.validator;
     this.apiMethod        = opt.apiMethod      || 'get';
+	var preEditCalls      = opt.preEditCalls;
 	var self = this;
 
-	var openModal = function(obj) { 
-
-		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj});
+	var openModal = function(obj, add_data) { 
+		var dialogOpt = opt.dialogOpt || {};
+		if(dialogOpt.constructor.name == 'Function') dialogOpt = dialogOpt(obj);
+		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data});
 		if(!modal.find('.modal-dialog')[0]) { 
-			modal = modal.makeModal({okButtonClass: opt.saveButtonClass, okButton:'<span class="glyphicon glyphicon-save"></span>&nbsp;Сохранить', title: opt.title, width: opt.width });
+			modal = modal.makeModal(_.extend({okButtonClass: opt.saveButtonClass, 
+				okButton:'<span class="fa fa-download"></span>&nbsp;Сохранить', 
+				title: opt.title, 
+				width: opt.width }, dialogOpt ));
 		}
 
 		var dialog = modal.find('.modal-dialog');
 		self.obj = obj;
 		self.modal = modal;
 		modal.modalBox({backdrop: 'static'});
+		
 		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.value = obj[n] ? obj[n] : ''; });
 		dialog.find('select').each(function() { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); });
 		dialog.find('input[type=checkbox]').each(function() { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); });
 		dialog.find('input[type=radio]').each(function() { this.checked = obj[this.name] == this.value });
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); $(this).data('widget').val(obj[name]); });
 
-		if(self.fillDialog) self.fillDialog(dialog, obj);
+		if(self.fillDialog) self.fillDialog(dialog, obj, add_data);
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
 		modal.one('hidden.bs.modal', function() { modal.remove();  });
@@ -1244,13 +1275,33 @@ window.qwx.editDialog = function (id, opt) {
 			self.saveDialog(this );
 		});
 	}
-	if(id) { 
-		this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {
-			openModal(r.obj);				
-		});
-	} else { 	
-		openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})));
-	}		
+
+	if(preEditCalls && preEditCalls.constructor.name == 'Function') { 
+		preEditCalls = preEditCalls(id ? { id: id } : null);
+	}
+	
+	if(preEditCalls && preEditCalls.length) { 
+		if(id) { 
+			var calls = [this.apiMethod, [ this.cid, id, this.data_prepare_opt]];
+			calls.concat(preEditCalls);
+			this.apiCall('txn', calls, null, function(r) { 
+				var res = r.result.shift();
+				openModal(res.obj,  r.result);
+			});
+		} else { 
+			this.apiCall('txn', preEditCalls, null, function(r) { 
+				openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})), r.result);
+			});
+		}
+	} else { 
+		if(id) { 
+			this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {
+				openModal(r.obj);				
+			});
+		} else { 	
+			openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})));
+		}		
+	}
 	this.saveDialog = function(btn) { 
 		var form = this.modal.find('.modal-dialog');
 		var attr = opt.addData || {};
@@ -1277,7 +1328,7 @@ window.qwx.editDialog = function (id, opt) {
 		];
 			
 		if (self.collectData) { 
-			try { self.collectData(form, attr, ops); } catch(err) { window.qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
+			try { self.collectData(form, attr, ops, btn); } catch(err) { window.qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
@@ -1355,7 +1406,8 @@ window.qwx.dateWidget = function(place, opt) {
     var div = this.div = place.find('.qwx-calendar');
     div.datepicker({ 
         inputs: div.find('input'), 
-        format: 'dd.mm.yyyy' 
+        format: 'dd.mm.yyyy',
+		language: opt.language || 'en'
     });
 	var inp = this.inp = div.find('input');
     div.datepicker().on('changeDate', function(e,m) { 
@@ -1376,6 +1428,7 @@ window.qwx.date2iso = function(jsdate) {
     return jsdate ? sprintf("%04d-%02d-%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate()) : null;
 };
 window.qwx.iso2date = function(isodate) { 
+	if(!isodate) return null;
     var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)/);
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3])) : null; 
 };
@@ -1384,7 +1437,7 @@ window.qwx.time2iso = function(jsdate) {
 };
 window.qwx.iso2time = function(isodate) {
     var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)[T\s](\d?\d):(\d\d):(\d\d)/);
-    return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6])) : null;
+    return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6])) : qwx.iso2date(isodate);
 };
 
 +function() { 
