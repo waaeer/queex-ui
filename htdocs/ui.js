@@ -1183,13 +1183,14 @@ window.qwx.imageWidget = function(place, opt) {
 	qwx.widget.call(this, place, opt);
 	var name      = this.name      = opt.name;
 	var uploadURI = this.uploadURI = opt.uploadURI;
+	var postUploadURI = opt.postUploadURI || uploadURI;
 	this.fsRoot   = opt.fsRoot;
 	place.html('<span role="edit-image" data-field="' + name + '"><span class="imgplace"></span><button class="btn-upload">Загрузить</button></span>');
 	var btn = place.find('button.btn-upload');
 	btn.uploadButton();
 
 	btn.on('postUpload', function(event, data) {
-		btn.parent().find('.imgplace').html('').append($('<img/>').attr({ src:opt.uploadURI + data.path }));
+		btn.parent().find('.imgplace').html('').append($('<img/>').attr({ src:postUploadURI + data.path }));
 	});
 };
 window.qwx.imageWidget.prototype = Object.create(window.qwx.widget.prototype);
@@ -1424,6 +1425,14 @@ window.qwx.dateWidget.prototype.val = function(v) {
         return this;
     }
 };
+window.qwx.dateWidget.prototype.objectVal = function(v) {
+    if (arguments.length == 0 ) {
+        return this.inp.datepicker('getDate');
+    } else {
+        this.val(v);
+	}
+};
+
 window.qwx.date2iso = function(jsdate) { 
     return jsdate ? sprintf("%04d-%02d-%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate()) : null;
 };
@@ -1440,7 +1449,7 @@ window.qwx.iso2time = function(isodate) {
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6])) : qwx.iso2date(isodate);
 };
 
-+function() { 
++function($) { 
     $.fn.qwxDateWidget = function(option) { 
         if(!option || typeof(option) == 'object') {
             this.data('widget', new qwx.dateWidget(this, option || {}));
@@ -1458,13 +1467,16 @@ window.qwx.iso2time = function(isodate) {
 }(jQuery);
 
 
-/* -- val() for widgets ---*/
+/* -- val() and w() for widgets ---*/
 +function($) { 
 	var oldVal = $.fn.val;
 	$.fn.val = function(v) { 
 		var w = $(this).data('widget');
 		if(w && w.val) return w.val.apply(w,arguments); 
 		else return oldVal.apply($(this),arguments); 
+	};
+	$.fn.w = function(v) { 
+		return $(this).data('widget');
 	};
 }(jQuery);
 
