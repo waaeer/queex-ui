@@ -4,11 +4,11 @@ if(!window.qwx) { window.qwx = {} }
 	function modalBox(x,opt) { 
 		x.one('shown.bs.modal', function() { 
 			modalStack.push(x);
-			this.style.zIndex = 1040 + 10 * modalStack.length;
+			this.style.zIndex = 1055 + 10 * modalStack.length;
 			var backdrops = $('.modal-backdrop');
 			var last_backdrop = backdrops[backdrops.length-1];
 			if(last_backdrop) { 
-				last_backdrop.style.zIndex = 1035 + 10 * modalStack.length;
+				last_backdrop.style.zIndex = 1050 + 10 * modalStack.length;
 			}
 			x.data('focus_in', document.activeElement);
 			$(this).find('[autofocus]').focus();
