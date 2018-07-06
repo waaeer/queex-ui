@@ -1188,9 +1188,11 @@ window.qwx.imageWidget = function(place, opt) {
 	place.html('<span role="edit-image" data-field="' + name + '"><span class="imgplace"></span><button class="btn-upload">Загрузить</button></span>');
 	var btn = place.find('button.btn-upload');
 	btn.uploadButton();
+	var self = this;
 
 	btn.on('postUpload', function(event, data) {
 		btn.parent().find('.imgplace').html('').append($('<img/>').attr({ src:postUploadURI + data.path }));
+		self.uploadData = data;
 	});
 };
 window.qwx.imageWidget.prototype = Object.create(window.qwx.widget.prototype);
@@ -1201,7 +1203,7 @@ window.qwx.imageWidget.prototype.val = function() {
 		var f = $('input[role=f]', this.place);
 		if(f[0]) { 
 			var n = $('input[role=n]', this.place);
-			return [f.val(), n.val()];
+			return [f.val(), n.val(), this.uploadData];
 		} else { 
 			return null;
 		}
@@ -1243,6 +1245,7 @@ window.qwx.editDialog = function (id, opt) {
 	this.templateOpt      = opt.templateOpt;
 	this.validator        = opt.validator;
     this.apiMethod        = opt.apiMethod      || 'get';
+	this.saveCid		  = opt.saveCid        || this.cid;
 	var preEditCalls      = opt.preEditCalls;
 	var self = this;
 
@@ -1325,7 +1328,7 @@ window.qwx.editDialog = function (id, opt) {
 		}
 		var id = form.data('id');
 		var ops = [
-			[	'save', self.cid,   id, attr ],
+			[	'save', self.saveCid,   id, attr ],
 		];
 			
 		if (self.collectData) { 
