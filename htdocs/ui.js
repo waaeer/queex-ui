@@ -436,6 +436,7 @@ window.qwx.list = function(place,opt) {
 	this.onBeforeDisplayList = opt.onBeforeDisplayList;
 	this.getList        = opt.getList; // function for use instead of default api
 	this.data           = opt.data; // simply load data for custom methods and templates	
+	this.deleteCid      = opt.deleteCid; //  if main cid is e.g. a view 
 
 	this.defaultFilter = {};
 	if(opt.filters) { 
@@ -633,7 +634,7 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 	el.find('[role=deleteButton]').on('click', function(e) {
 		e.stopPropagation();
 		if(confirm(self.remove.question || 'Delete object?')) { 
-			self.apiCall ('delete', [self.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
+			self.apiCall ('delete', [self.deleteCid || self.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
 				el.addClass('deleted-row');
 				el.slideUp();
 				if(self.postDeleteRow) self.postDeleteRow(el);
@@ -1231,6 +1232,13 @@ window.qwx.imageWidget.prototype.val = function() {
 		return this;
 	}
 }(jQuery);
+
+window.qwx.deepScan = function (top, selector, exclude, cb) {
+	var children = top.find('>*').not(exclude);
+	children.filter(selector).each(cb);
+	if(children.length > 0) 
+		window.qwx.deepScan(children, selector, exclude, cb);
+};
 /* -- editDialog -- */
 window.qwx.editDialog = function (id, opt) { 
 	qwx.widget.call(this, null, opt);
@@ -1312,17 +1320,58 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.getAfterSave && self.getAfterSave != 'final' ) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
-		form.find('input[type=text],input[type=number],textarea') .each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.value; });
-		form.find('select').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
-		form.find('input[type=checkbox]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.checked ? 1 : 0; });
-		form.find('input[type=radio]'   ).each(function() { var name=this.getAttribute('name'); if(name && this.checked) attr[name] = this.value; });
-		form.find('[role=widget]').each(function() {  var name=this.getAttribute('name'); if(name) attr[name] = $(this).data('widget').val(); });
+		var has_err = false;
+		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', function() { 
+			var el   = this;
+			var name = this.getAttribute('name');
+			var type = this.getAttribute('type');
+			if(name) { 
+				var empty = null;
+				if((el.tagName == 'INPUT' && (type == 'text' || type == 'number')) || el.tagName == 'TEXTAREA') { 
+					attr[name] = this.value;
+					if(el.hasAttribute('validate-filled')) { 
+						empty = !this.value.match(/\S/);
+					}
+				} else if (el.tagName == 'SELECT') { 
+					attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null;
+					if(el.hasAttribute('validate-selected')) {	
+						var v= $(el).val();
+						empty = (v === null || v==='');
+					}
+				} else if(el.tagName == 'INPUT') { 
+					if(type == 'checkbox')   attr[name] = this.checked ? 1 : 0;
+					else if(type == 'radio' && this.checked) attr[name] = this.value;
+					if(el.hasAttribute('validate-selected')) {
+						empty = !attr[name];
+					}
+				} else if(el.getAttribute('role') == 'widget') { 
+					attr[name] = $(this).data('widget').val();
+					if(el.hasAttribute('validate-selected')) {
+						empty = !attr[name];
+					}
+				}
+
+				if(empty!==null) 
+					if(empty) { 
+						$(el).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (el.title || name), true, 'error');
+					} else { 	
+						$(el).removeClass('not-filled');
+					}
+			}
+		});
+		
+/*		form.find('input[type=text],input[type=number],textarea') 
+		                                 .not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.value; });
+		form.find('select'              ).not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
+		form.find('input[type=checkbox]').not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.checked ? 1 : 0; });
+		form.find('input[type=radio]'   ).not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name && this.checked) attr[name] = this.value; });
+		form.find('[role=widget]'       ).not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = $(this).data('widget').val(); });
 
 		var has_err = false;
 		form.find('input[type=text][validate-filled]').each(function() { if(!this.value.match(/\S/)) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
 		form.find('select[validate-selected]').each(function() { if($(this).val() === null || $(this).val()==='') { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
 		form.find('input[type=radio][validate-selected], [role=widget][validate-selected]').each(function() { if(!attr[this.getAttribute('name')]) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-
+*/
 		if(has_err || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
 		}
