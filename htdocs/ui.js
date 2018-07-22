@@ -1,6 +1,30 @@
 if(!window.qwx) { window.qwx = {} } 
 +function($) {
 	var modalStack = [];
+	/* ------------------------------------------------------ */
+
+	window.qwx.setJQWidget = function(jqname, constr, methods) {
+	    var c; eval('c=function(place,option) { return new ' + constr + '(place, option);}'); /* instead of dynamic constructor call which is implementation-dependent yet */
+	    jQuery.fn[jqname] = function(option) {
+	        if(!option || typeof(option) == 'object') {
+	            this.data('widget', c(this, option || {}));
+	        } else {
+	            var w = this.data('widget');
+	            if(option == 'val') { 
+	                return arguments.length == 1 ? w.val() : w.val(arguments[1]);
+	            } else if( option == 'widget') {
+	                return w;
+	            } else if(methods && methods[option]) { 
+	                return method[option].apply(this,arguments);
+	            } else { 
+	                console.log('Unknown method ' + option + ' in ' + jqname);
+	            }   
+	        }
+	        return this;
+	    };
+	
+	};
+
 	function modalBox(x,opt) { 
 		x.one('shown.bs.modal', function() { 
 			modalStack.push(x);
@@ -76,6 +100,7 @@ if(!window.qwx) { window.qwx = {} }
 		if(option && option.title) modal.find('.modal-title').html(option.title);
 		return modal;
 	}
+
 } (jQuery);
 	
 
@@ -679,15 +704,15 @@ window.qwx.list.prototype.resume = function() {
 		}
 		return this;
 	}
-	$.fn.qwxList = function(option) { 
-		if(!option || typeof(option) == 'object') { 
+	$.fn.qwxList = function(option) {
+		if(!option || typeof(option) == 'object') {    
 			this.data('qwxlist', new qwx.list(this, option));
-		} else {
+        } else {
 			return methods.apply(this, arguments);
 		}
 		return this;
-	}
-		
+    };
+	
 }(jQuery);
 
 window.qwx.selectWidget = function(place,opt) { 
