@@ -1526,22 +1526,56 @@ window.qwx.iso2time = function(isodate) {
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6])) : qwx.iso2date(isodate);
 };
 
-+function($) { 
-    $.fn.qwxDateWidget = function(option) { 
-        if(!option || typeof(option) == 'object') {
-            this.data('widget', new qwx.dateWidget(this, option || {}));
-        } else {
-            var w = this.data('widget');
-            if(option == 'val') { 
-                return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-            } else if(option == 'widget') { 
-				return w ? w : null;
-			}
-			
-        }
-        return this;
-    };
-}(jQuery);
+/*----- bicalendar -------*/
+window.qwx.biCalendarWidget = function(place, opt) { 
+	qwx.widget.call(this, place, opt);
+	place.html('<div class="qwx-bicalendar">'+ (opt.wrapOne ? opt.wrapOne[0] : '') + window.qwx.tr('с')  + ' <span><input class="form-control qwx-input-date"></span> ' + (opt.wrapOne ? opt.wrapOne[1] : '')
+		                                     + (opt.wrapOne ? opt.wrapOne[0] : '') + window.qwx.tr('по') + ' <span><input class="form-control qwx-input-date"></span>' + (opt.wrapOne ? opt.wrapOne[1] : '')
+		     + '</div>');
+	var cal1 = $(place.find('input')[0]);
+	var cal2 = $(place.find('input')[1]);
+	var div = place.find('.qwx-bicalendar');
+	this.is_interactive = true;
+	var self = this;
+	div.datepicker({ 
+		inputs:   div.find('input'), 
+		format:   opt.datepickerFomat || 'dd/mm/yyyy',
+		language: opt.language || 'en'
+	});
+	cal1.datepicker().on('changeDate', function(e) { 
+		if(self.is_interactive) { 
+			cal1.datepicker('hide'); cal2.datepicker('show');
+			place.trigger('change');
+		}
+	});
+	cal2.datepicker().on('changeDate',function(e) { 
+		if(self.is_interactive) {
+			cal2.datepicker('hide');
+			place.trigger('change');
+		}
+	});
+	place.find('span').on('change', function(ev) { ev.stopPropagation(); });
+	this.cal1 = cal1;
+	this.cal2 = cal2;
+	this.div = div;
+};
+window.qwx.biCalendarWidget.prototype.val = function(v) {
+	if (arguments.length == 0 ) {
+		return [qwx.date2iso(this.cal1.datepicker('getDate')), 
+		        qwx.date2iso(this.cal2.datepicker('getDate'))];
+	} else {
+		this.is_interactive = false;
+		this.cal1.datepicker('setDate', (v[0] instanceof Date) ? v[0] : qwx.iso2date(v[0]) );
+		this.cal2.datepicker('setDate', (v[1] instanceof Date) ? v[1] : qwx.iso2date(v[1]) );
+		this.is_interactive = true;
+		return this;
+	}
+};
+/*------------------------------------------------------------------------------------------------------------------*/
+
+qwx.setJQWidget('qwxDateWidget', 'qwx.dateWidget');
+qwx.setJQWidget('qwxBiCalendarWidget', 'qwx.biCalendarWidget');
+
 
 
 /* -- val() and w() for widgets ---*/
