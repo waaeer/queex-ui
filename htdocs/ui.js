@@ -30,24 +30,40 @@ if(!window.qwx) { window.qwx = {} }
 			modalStack.push(x);
 			this.style.zIndex = 1055 + 10 * modalStack.length;
 			var backdrops = $('.modal-backdrop');
+			// raise previous backdrop; on "shown" return it back:
 			var last_backdrop = backdrops[backdrops.length-1];
 			if(last_backdrop) { 
 				last_backdrop.style.zIndex = 1050 + 10 * modalStack.length;
 			}
+			
+		});
+		x.one('shown.bs.modal', function() { 
+			var backdrops = $('.modal-backdrop');
+			var prev_backdrop = backdrops[backdrops.length-2];
+			if(prev_backdrop) { 
+				prev_backdrop.style.zIndex = 1040 + 10 * modalStack.length;
+			}
+			var last_backdrop = backdrops[backdrops.length-1];
+			if(last_backdrop) {
+				last_backdrop.style.zIndex = 1050 + 10 * modalStack.length;
+			}
 			x.data('focus_in', document.activeElement);
-			$(this).focus();
-			$(this).find('[autofocus]').focus();
+			var af = $(this).find('[autofocus]');
+			$(this).find('.modal-dialog').attr('tabindex', -1); // otherwise div will not get focus
+			if(!af[0]) af = $(this).find('input[type=text],textarea');
+			if(!af[0]) af = $(this).find('.modal-dialog');
+			if(af[0]) af.first().focus(); 
+			
 			var prev = modalStack.length == 1 ? null : modalStack[modalStack.length-2];
 			if(prev) { 
-				var kdwh = $.data(prev[0], "events");
+				var kdwh = $._data ? $._data(prev[0],'events') : $.data(prev[0], "events"); //ATTN! Internal jQuery structure, subject to change!
+
 				if(kdwh) kdwh = kdwh.keydown;
 				if(kdwh) { 
 					x.data('prev_keyha', kdwh[0].handler );
 					prev.off('keydown.dismiss.bs.modal');
 				}
 			}
-		});
-		x.one('shown.bs.modal', function() { 
 			if(x.data('hideonshow')) { 
 				x.modal('hide');
 			}
@@ -55,6 +71,10 @@ if(!window.qwx) { window.qwx = {} }
 		});
 		x.one('hidden.bs.modal', function() { 
 			modalStack.pop();
+			var backdrops = $('.modal-backdrop');
+			console.log('hidden: backgrops=', backdrops);
+			var last_backdrop = backdrops[backdrops.length-1];
+			//last_backdrop.remove();
 			var prev = modalStack.length == 0 ? null : modalStack[modalStack.length-1];
 			if(prev) {
 				prev.on('keydown.dismiss.bs.modal',x.data('prev_keyha') ); 
