@@ -26,7 +26,7 @@ if(!window.qwx) { window.qwx = {} }
 	};
 
 	function modalBox(x,opt) { 
-		x.one('shown.bs.modal', function() { 
+		x.one('show.bs.modal', function() { 
 			modalStack.push(x);
 			this.style.zIndex = 1055 + 10 * modalStack.length;
 			var backdrops = $('.modal-backdrop');
@@ -35,6 +35,7 @@ if(!window.qwx) { window.qwx = {} }
 				last_backdrop.style.zIndex = 1050 + 10 * modalStack.length;
 			}
 			x.data('focus_in', document.activeElement);
+			$(this).focus();
 			$(this).find('[autofocus]').focus();
 			var prev = modalStack.length == 1 ? null : modalStack[modalStack.length-2];
 			if(prev) { 
@@ -45,6 +46,8 @@ if(!window.qwx) { window.qwx = {} }
 					prev.off('keydown.dismiss.bs.modal');
 				}
 			}
+		});
+		x.one('shown.bs.modal', function() { 
 			if(x.data('hideonshow')) { 
 				x.modal('hide');
 			}
