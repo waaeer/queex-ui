@@ -553,13 +553,18 @@ window.qwx.list.prototype.getData = function (page,filter,cb) {
 	}	
 	var query = filter ? _.extend({}, this.query, realFilter) : this.query;
 	if(this.postprocessQuery)  this.postprocessQuery(query);
+	this.place.trigger('getData', this, query, page);
+	var modcb = function(res) { 
+		this.place.trigger('gotData', this, res);
+		if(cb) cb(res);
+	};
 	if(query.__dont_get_data) { 
-		cb({list:[],n:0});
+		modcb({list:[],n:0});
 	} else { 
 		if(this.getList) { 
-			this.getList(query, page, cb);
+			this.getList(query, page, modcb);
 		} else { 
-			this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, cb);
+			this.apiCall( this.apiMethod, [ this.cid, query, page, this.page_size, this.data_prepare_opt ], null, modcb );
 		}
 	}
 }	
