@@ -307,8 +307,10 @@ window.qwx.ajax = function(opt) {
 			if(r.error) {
 				// toDo: must-authenticate
 					if(opt.error) { 
+						if(opt.block) qwx.closeMessageBox();
 						opt.error(r);
 					} else if(window.ajaxErrorHandler) { 
+						if(opt.block) qwx.closeMessageBox();
 						window.ajaxErrorHandler(r);
 					} else { 					// toDo: format error messages of known types
 						qwx.messageBox(qwx.tr('Ошибка'), r.error, true, 'error');
@@ -325,13 +327,12 @@ window.qwx.ajax = function(opt) {
 					} else {
 						rc = true;
 					}
-					if(opt.block && rc) { 
-						qwx.closeMessageBox();
-					}
+					if(opt.block) qwx.closeMessageBox();
 			}
 
 		}, 
 		error: function(r) { 
+			qwx.closeMessageBox();
 			if(opt.error) { 
 				opt.error(r);
 			} else if(window.ajaxErrorHandler) { 
@@ -554,8 +555,9 @@ window.qwx.list.prototype.getData = function (page,filter,cb) {
 	var query = filter ? _.extend({}, this.query, realFilter) : this.query;
 	if(this.postprocessQuery)  this.postprocessQuery(query);
 	this.place.trigger('getData', this, query, page);
+	var self = this;
 	var modcb = function(res) { 
-		this.place.trigger('gotData', this, res);
+		self.place.trigger('gotData', this, res);
 		if(cb) cb(res);
 	};
 	if(query.__dont_get_data) { 
