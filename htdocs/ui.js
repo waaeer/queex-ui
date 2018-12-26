@@ -72,7 +72,6 @@ if(!window.qwx) { window.qwx = {} }
 		x.one('hidden.bs.modal', function() { 
 			modalStack.pop();
 			var backdrops = $('.modal-backdrop');
-			console.log('hidden: backgrops=', backdrops);
 			var last_backdrop = backdrops[backdrops.length-1];
 			//last_backdrop.remove();
 			var prev = modalStack.length == 0 ? null : modalStack[modalStack.length-1];
@@ -818,6 +817,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
 	$('<span class="caret"/>').appendTo(btn);
 	var menu = $('<ul class="dropdown-menu pseudo-select"/>').appendTo(base);
+	if(opt.menuClass) menu.addClass(opt.menuClass);
 	this.menu = menu;
 	this.btn  = btn;
 	var self = this;
