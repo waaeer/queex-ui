@@ -66,6 +66,7 @@ if(!window.qwx) { window.qwx = {} }
 			}
 			if(x.data('hideonshow')) { 
 				x.modal('hide');
+				x.data('hideonshow', false);
 			}
 			x.data('isShown', true);
 		});
@@ -104,7 +105,7 @@ if(!window.qwx) { window.qwx = {} }
 		var width = option && option.width || '60%';
 
 		var modal = $('<div/>');
-		modal.addClass('modal fade messageBox').html(
+		modal.addClass('modal fade').html(
 ' <div class="modal-dialog" style="width:' + width + ';"><div class="modal-content"><div class="modal-header">' + 
 '		 <h4 class="modal-title"></h4>' + 
 (option && option.topClose ? '<button type="button" class="btn btn-light btn-sm" data-dismiss="modal" style="float:right;"><i class="fa fa-times"></i></button>' : '') +
@@ -129,44 +130,72 @@ if(!window.qwx) { window.qwx = {} }
 
 +function() { 
 	var messageBoxElement;
+	var afterClose = [], afterShow = [], closeInProgress = false, showInProgress = false;
 	function init() { 
-		if(!messageBoxElement) 
-		messageBoxElement = $('<div/>').addClass('modal fade messageBox').html(
+		if(!messageBoxElement) {
+			messageBoxElement = $('<div/>').addClass('modal fade messageBox').html(
 ' <div class="modal-dialog" style="width:300px;"><div class="modal-content"><div class="modal-header">' + 
 '		 <h4 class="modal-title"></h4></div><div class="modal-body"> </div><div class="modal-footer">' + 
 '		 <button type="button" style="display:none; float: left;" class="btn btn-success">Подтвердить</button>' + 
 '        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>' +
 '      </div></div></div></div>'
-		).appendTo($('body'));
+			).appendTo($('body'));
+			messageBoxElement.on('hidden.bs.modal', function(ev) { 
+				for(var i=0;i<afterClose.length;i++) afterClose[i]();
+				afterClose = [];
+				closeInProgress = false;
+			});
+			messageBoxElement.on('shown.bs.modal', function(ev) { 
+				for(var i=0;i<afterShow.length;i++) afterShow[i]();
+				afterShow = [];
+				showInProgress = false;
+			});
+		}
 		return messageBoxElement;
 	};		
 	window.qwx.messageBox = function(title,text,close,style_opt) {
 		var div = init();
-		var h = div.find('.modal-header'), f=div.find('.modal-footer'), b=div.find('.modal-body');
-		if(title) {  h.show().find('.modal-title').html(title); } 
-		else  h.hide();
-		b.html(text);
-		if(style_opt && style_opt.match(/wait/))  b.addClass('waiting'); else b.removeClass('waiting');
-		if(style_opt && style_opt.match(/error/)) {
-			div.addClass('error'); 
-			b.prepend('<span class="fa fa-exclamation-circle" aria-hidden="true"></span>');
-		} else {
-			div.removeClass('error');
-		}
+		function func() { 
+			var h = div.find('.modal-header'), f=div.find('.modal-footer'), b=div.find('.modal-body');
+			if(title) {  h.show().find('.modal-title').html(title); } 
+			else  h.hide();
+			b.html(text);
+			if(style_opt && style_opt.match(/wait/))  b.addClass('waiting'); else b.removeClass('waiting');
+			if(style_opt && style_opt.match(/error/)) {
+				div.addClass('error'); 
+				b.prepend('<span class="fa fa-exclamation-circle" aria-hidden="true"></span>');
+			} else {
+				div.removeClass('error');
+			}
 	
-		if(close) f.show();
-			else  f.hide();
-		f.find('.btn-success').hide();
-		f.find('.btn-success').off('click');
-		div[0].focus();
-		f.find('.btn-default').each(function() { this.focus();});
-		div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });
+			if(close) f.show();
+				else  f.hide();
+			f.find('.btn-success').hide();
+			f.find('.btn-success').off('click');
+			div[0].focus();
+			f.find('.btn-default').each(function() { this.focus();});
+			showInProgress = true;
+			div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });
+		}
+		if(closeInProgress) { 
+			afterClose.push(func);
+		} else { 
+			func();
+		}
 	};
 	window.qwx.getMessageBox = function() { 
 		return init();
 	};
 	window.qwx.closeMessageBox = function() { 
-		init().modalBox('hide');
+		if(messageBoxElement && showInProgress) {
+			afterShow.push(function() { messageBoxElement.modalBox('hide'); });
+		}
+		if(!messageBoxElement || closeInProgress || messageBoxElement.css('display') == 'none') { return; }
+		closeInProgress=true;
+		messageBoxElement.modalBox('hide');
+	};
+	window.qwx.debugMessageBox = function() { 
+		console.log([ messageBoxElement, showInProgress, afterShow, closeInProgress, afterClose ]);
 	};
 	window.qwx.confirmBox = function(title,text,action) {
 		var div = init();
@@ -306,28 +335,28 @@ window.qwx.ajax = function(opt) {
 		success: function(r) { 
 			if(r.error) {
 				// toDo: must-authenticate
-					if(opt.error) { 
-						if(opt.block) qwx.closeMessageBox();
-						opt.error(r);
-					} else if(window.ajaxErrorHandler) { 
-						if(opt.block) qwx.closeMessageBox();
-						window.ajaxErrorHandler(r);
-					} else { 					// toDo: format error messages of known types
-						qwx.messageBox(qwx.tr('Ошибка'), r.error, true, 'error');
-					}
-			} else {
-					var rc;
-					if(opt.success) {
-						if(opt.success == 'reload') { 
-							document.location.reload();
-						// toDo: other standard actions
-						} else {
-							rc = opt.success(r);
-						}
-					} else {
-						rc = true;
-					}
+				if(opt.error) { 
 					if(opt.block) qwx.closeMessageBox();
+					opt.error(r);
+				} else if(window.ajaxErrorHandler) { 
+					if(opt.block) qwx.closeMessageBox();
+					window.ajaxErrorHandler(r);
+				} else { 					// toDo: format error messages of known types
+					qwx.messageBox(qwx.tr('Ошибка'), r.error, true, 'error');
+				}
+			} else {
+				var rc;
+				if(opt.success) {
+					if(opt.success == 'reload') { 
+						document.location.reload();
+					// toDo: other standard actions
+					} else {
+						rc = opt.success(r);
+					}
+				} else {
+					rc = true;
+				}
+				if(opt.block) qwx.closeMessageBox();
 			}
 
 		}, 
@@ -343,9 +372,6 @@ window.qwx.ajax = function(opt) {
 		}
 	});
 };
-
-
-
 
 +function($) {
 	var upload_id = 1;
@@ -927,7 +953,7 @@ window.qwx.pseudoSelectWidget.prototype.objectVal = function() {
 	}
 }(jQuery);
 
-window.qwx.autocompleteWidget = function(place,opt) { 
+window.qwx.autocompleteWidget = function(place,opt) { // requires typeahead.jquery.js
 	qwx.widget.call(this, place, opt); 
 	var val = opt.val;
 	this.onSelect   = opt.onSelect;
@@ -949,7 +975,7 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		limit: (opt.limit || 5),
 		source: function(q,sync_cb,async_cb) { 			
 			if(opt.search) { 
-				opt.search(q, function(list) { async_cb(list); });
+				opt.search(q, async_cb);
 			} else { 
 				var args = [q];
 				if(opt.preprocessQuery) { args = opt.preprocessQuery(args); }
@@ -1001,6 +1027,7 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		state = 'selected';
 		sel.removeClass('autocomplete-bad').addClass('autocomplete-ok');
 		place.attr('data-value', d.id);
+		place.data('object', d);
 		if(opt.onSelect) opt.onSelect(d);
 		place.trigger('change', d);
 	});
@@ -1008,6 +1035,7 @@ window.qwx.autocompleteWidget = function(place,opt) {
 		state = 'working';
 		sel.removeClass('autocomplete-ok').addClass('autocomplete-bad');
 		place.attr('data-value', '');
+		place.data('object', null);
 		if(opt.onQueryChanged) opt.onQueryChanged(d);
 	});
 }
@@ -1021,10 +1049,13 @@ window.qwx.autocompleteWidget.prototype.val = function() {
 		var o = arguments[0];
 		this.inp.val(o ? (this.displayKey ? (_.isFunction(this.displayKey) ? this.displayKey(o) : o[this.displayKey] ) : o.title) : '');
 		this.inp.typeahead('val', o ? (this.displayKey ? (_.isFunction(this.displayKey) ? this.displayKey(o) : o[this.displayKey] ) : o.title) : '');
-		this.inp.addClass('autocomplete-ok');
+		this.inp.removeClass('autocomplete-bad').addClass('autocomplete-ok');
 		this.place.attr('data-value', o ? o.id : null); 
 		if(this.onSelect) this.onSelect(o);
 	}
+};
+window.qwx.autocompleteWidget.prototype.objectVal = function() { 
+	return this.place.data('object');
 };
 window.qwx.autocompleteWidget.prototype.close = function() {
 	this.inp.typeahead('close');
@@ -1328,11 +1359,11 @@ window.qwx.editDialog = function (id, opt) {
 		self.modal = modal;
 		modal.modalBox({backdrop: 'static'});
 		
-		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.value = obj[n] ? obj[n] : ''; });
-		dialog.find('select').each(function() { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); });
-		dialog.find('input[type=checkbox]').each(function() { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); });
-		dialog.find('input[type=radio]').each(function() { this.checked = obj[this.name] == this.value });
-		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); $(this).data('widget').val(obj[name]); });
+		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; if(n) this.value = obj[n] ? obj[n] : ''; });
+		dialog.find('select').each(function() { if(this.name) { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
+		dialog.find('input[type=checkbox]').each(function() { if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
+		dialog.find('input[type=radio]').each(function() {  if(this.name) { this.checked = obj[this.name] == this.value }});
+		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); if(name) $(this).data('widget').val(obj[name]); });
 
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data);
 		dialog.find('[autofocus]').focus();
@@ -1375,7 +1406,7 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.getAfterSave && self.getAfterSave != 'final' ) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
-		var has_err = false;
+		var postponed_radio_validation = {}, empty_fields = [];
 		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', function() { 
 			var el   = this;
 			var name = this.getAttribute('name');
@@ -1397,7 +1428,8 @@ window.qwx.editDialog = function (id, opt) {
 					if(type == 'checkbox')   attr[name] = this.checked ? 1 : 0;
 					else if(type == 'radio' && this.checked) attr[name] = this.value;
 					if(el.hasAttribute('validate-selected')) {
-						empty = !attr[name];
+						if(type == 'radio') postponed_radio_validation[name] = el.title;
+						else empty = !attr[name];
 					}
 				} else if(el.getAttribute('role') == 'widget') { 
 					attr[name] = $(this).data('widget').val();
@@ -1408,26 +1440,21 @@ window.qwx.editDialog = function (id, opt) {
 
 				if(empty!==null) 
 					if(empty) { 
-						$(el).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (el.title || name), true, 'error');
+						$(el).addClass('not-filled'); has_err = true; empty_fields.push(el.title || name);
 					} else { 	
 						$(el).removeClass('not-filled');
 					}
 			}
 		});
-		
-/*		form.find('input[type=text],input[type=number],textarea') 
-		                                 .not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.value; });
-		form.find('select'              ).not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null; });
-		form.find('input[type=checkbox]').not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = this.checked ? 1 : 0; });
-		form.find('input[type=radio]'   ).not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name && this.checked) attr[name] = this.value; });
-		form.find('[role=widget]'       ).not('[nosave]').each(function() { var name=this.getAttribute('name'); if(name) attr[name] = $(this).data('widget').val(); });
-
-		var has_err = false;
-		form.find('input[type=text][validate-filled]').each(function() { if(!this.value.match(/\S/)) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-		form.find('select[validate-selected]').each(function() { if($(this).val() === null || $(this).val()==='') { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-		form.find('input[type=radio][validate-selected], [role=widget][validate-selected]').each(function() { if(!attr[this.getAttribute('name')]) { $(this).addClass('not-filled'); has_err = true; window.qwx.messageBox('Ошибка', 'Не заполнено поле ' + (this.title || this.name), true, 'error'); } else { $(this).removeClass('not-filled'); }  });
-*/
-		if(has_err || (self.validator &&  !self.validator(form, attr))) { 
+		for(var name in postponed_radio_validation) { 
+			if(!attr[name]) { 
+				empty_fields.push(postponed_radio_validation[name] || name);
+			}
+		}
+		if(empty_fields.length>0) { 
+			window.qwx.messageBox('Ошибка', (empty_fields.length==1 ? 'Не заполнено поле ' : 'Не заполнены поля ') + empty_fields.join(', '), true, 'error');
+		}
+		if(empty_fields.length>0 || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
 		}
 		var id = form.data('id');
@@ -1436,7 +1463,7 @@ window.qwx.editDialog = function (id, opt) {
 		];
 			
 		if (self.collectData) { 
-			try { self.collectData(form, attr, ops, btn); } catch(err) { window.qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
+			try { self.collectData(form, attr, ops, btn); } catch(err) { qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
@@ -1461,16 +1488,19 @@ window.qwx.checkBoxArray = function(place, opt) {
 	var self = this;
 	if(opt.values) {
 		for(var i=0;i<opt.values.length;i++) { var s = opt.values[i];
-			var b = $('<label class="btn btn-default"/>').append( $('<input type="checkbox"/>').prop('value',s.id) ).append('&nbsp;'+s.title);
+			var b = $('<label class="btn btn-default"/>').append( 
+				$('<input type="checkbox"/>').prop('value',s.id).on('change', function(ev){ ev.stopPropagation();} )
+			).append('&nbsp;'+s.title);
 			b.appendTo(el);
 			if(s.checked) { self.value.push(s.id); b.addClass('active'); } 
 		}
 	}
 	el.on('click', function() {
 		setTimeout(function() { 
-			el.find('.btn').removeClass('focus'); 
+			el.find('.btn').removeClass('focus');
+			el.find('input[type=checkbox]').each(function() { this.checked = false; });
 			self.value = []; 
-			el.find('.btn.active input').each(function() { self.value.push(this.value) });
+			el.find('.btn.active input').each(function() { self.value.push(this.value); this.checked = true;});
 			place.trigger('change');
 		}, 0 );	
 	});
@@ -1485,7 +1515,9 @@ window.qwx.checkBoxArray.prototype.val = function(x) {
 			this.place.find('label').removeClass('active');
 			this.value = [];
 			for(var i=0,l=x.length;i<l;i++) { 
-				this.place.find('input[value=' + x[i] + ']').parent().addClass('active');
+				var cbx = this.place.find('input[value=' + x[i] + ']');
+				cbx[0].checked = true;
+				cbx.parent().addClass('active');
 				this.value.push(x[i]);
 			}
 		}
@@ -1575,15 +1607,18 @@ window.qwx.biCalendarWidget = function(place, opt) {
 	cal1.datepicker().on('changeDate', function(e) { 
 		if(self.is_interactive) { 
 			cal1.datepicker('hide'); cal2.datepicker('show');
-			place.trigger('change');
+//			place.trigger('change');
 		}
 	});
 	cal2.datepicker().on('changeDate',function(e) { 
 		if(self.is_interactive) {
 			cal2.datepicker('hide');
-			place.trigger('change');
+//			place.trigger('change');
 		}
 	});
+	cal1.on('change', function() { if(self.is_interactive) {place.trigger('change'); }});
+	cal2.on('change', function() { if(self.is_interactive) {place.trigger('change'); }});
+
 	place.find('span').on('change', function(ev) { ev.stopPropagation(); });
 	this.cal1 = cal1;
 	this.cal2 = cal2;
@@ -1605,7 +1640,6 @@ window.qwx.biCalendarWidget.prototype.val = function(v) {
 
 qwx.setJQWidget('qwxDateWidget', 'qwx.dateWidget');
 qwx.setJQWidget('qwxBiCalendarWidget', 'qwx.biCalendarWidget');
-
 
 
 /* -- val() and w() for widgets ---*/
