@@ -130,7 +130,7 @@ if(!window.qwx) { window.qwx = {} }
 
 +function() { 
 	var messageBoxElement;
-	var afterClose = [], afterShow = [], closeInProgress = false, showInProgress = false;
+	var opQueue = [], closeInProgress = false, showInProgress = false;
 	function init() { 
 		if(!messageBoxElement) {
 			messageBoxElement = $('<div/>').addClass('modal fade messageBox').html(
@@ -141,14 +141,20 @@ if(!window.qwx) { window.qwx = {} }
 '      </div></div></div></div>'
 			).appendTo($('body'));
 			messageBoxElement.on('hidden.bs.modal', function(ev) { 
-				for(var i=0;i<afterClose.length;i++) afterClose[i]();
-				afterClose = [];
 				closeInProgress = false;
+				if(opQueue.length>0) { 
+					var op = opQueue.shift();
+					op();
+				}				
 			});
 			messageBoxElement.on('shown.bs.modal', function(ev) { 
-				for(var i=0;i<afterShow.length;i++) afterShow[i]();
-				afterShow = [];
 				showInProgress = false;
+				for(var i=0;i<opQueue.length;i++) opQueue[i]();
+				if(opQueue.length>0) { 
+					var op = opQueue.shift();
+					op();
+				}
+				
 			});
 		}
 		return messageBoxElement;
@@ -177,8 +183,8 @@ if(!window.qwx) { window.qwx = {} }
 			showInProgress = true;
 			div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });
 		}
-		if(closeInProgress) { 
-			afterClose.push(func);
+		if(closeInProgress || showInProgress) { 
+			opQueue.push(func);
 		} else { 
 			func();
 		}
@@ -187,15 +193,16 @@ if(!window.qwx) { window.qwx = {} }
 		return init();
 	};
 	window.qwx.closeMessageBox = function() { 
-		if(messageBoxElement && showInProgress) {
-			afterShow.push(function() { messageBoxElement.modalBox('hide'); });
+		if(messageBoxElement && (closeInProgress || showInProgress)) {
+			opQueue.push(function() { closeInProgress=true; messageBoxElement.modalBox('hide'); });
+			return;
 		}
 		if(!messageBoxElement || closeInProgress || messageBoxElement.css('display') == 'none') { return; }
 		closeInProgress=true;
 		messageBoxElement.modalBox('hide');
 	};
 	window.qwx.debugMessageBox = function() { 
-		console.log([ messageBoxElement, showInProgress, afterShow, closeInProgress, afterClose ]);
+		console.log([ messageBoxElement, showInProgress, closeInProgress, opQueue ]);
 	};
 	window.qwx.confirmBox = function(title,text,action) {
 		var div = init();
