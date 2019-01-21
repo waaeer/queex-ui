@@ -149,7 +149,6 @@ if(!window.qwx) { window.qwx = {} }
 			});
 			messageBoxElement.on('shown.bs.modal', function(ev) { 
 				showInProgress = false;
-				for(var i=0;i<opQueue.length;i++) opQueue[i]();
 				if(opQueue.length>0) { 
 					var op = opQueue.shift();
 					op();
@@ -197,6 +196,7 @@ if(!window.qwx) { window.qwx = {} }
 			opQueue.push(function() { closeInProgress=true; messageBoxElement.modalBox('hide'); });
 			return;
 		}
+
 		if(!messageBoxElement || closeInProgress || messageBoxElement.css('display') == 'none') { return; }
 		closeInProgress=true;
 		messageBoxElement.modalBox('hide');
@@ -713,12 +713,12 @@ window.qwx.list.prototype.setObject = function(obj, opt) {
 };
 window.qwx.list.prototype.enableRowButtons = function(el, obj) { 
 	var self = this;
-	el.find('[role=editButton]').on('click', function(e) { 
+	el.find('[role=editButton],.editButton').first().on('click', function(e) { 
 		e.stopPropagation();
 		self.enableEditor(el,obj);
 	});
 	if(!self.remove) { self.remove = {}; } 
-	el.find('[role=deleteButton]').on('click', function(e) {
+	el.find('[role=deleteButton],.deleteButton').on('click', function(e) {
 		e.stopPropagation();
 		if(confirm(self.remove.question || 'Delete object?')) { 
 			self.apiCall ('delete', [self.deleteCid || self.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
