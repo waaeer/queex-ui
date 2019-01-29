@@ -130,7 +130,7 @@ if(!window.qwx) { window.qwx = {} }
 
 +function() { 
 	var messageBoxElement;
-	var opQueue = [], closeInProgress = false, showInProgress = false;
+	var opQueue = [], closeInProgress = false, showInProgress = false, isShown = false;
 	function init() { 
 		if(!messageBoxElement) {
 			messageBoxElement = $('<div/>').addClass('modal fade messageBox').html(
@@ -142,6 +142,7 @@ if(!window.qwx) { window.qwx = {} }
 			).appendTo($('body'));
 			messageBoxElement.on('hidden.bs.modal', function(ev) { 
 				closeInProgress = false;
+				isShown = false;
 				if(opQueue.length>0) { 
 					var op = opQueue.shift();
 					op();
@@ -149,6 +150,7 @@ if(!window.qwx) { window.qwx = {} }
 			});
 			messageBoxElement.on('shown.bs.modal', function(ev) { 
 				showInProgress = false;
+				isShown = true;
 				if(opQueue.length>0) { 
 					var op = opQueue.shift();
 					op();
@@ -193,7 +195,10 @@ if(!window.qwx) { window.qwx = {} }
 	};
 	window.qwx.closeMessageBox = function() { 
 		if(messageBoxElement && (closeInProgress || showInProgress)) {
-			opQueue.push(function() { closeInProgress=true; messageBoxElement.modalBox('hide'); });
+			opQueue.push(function() { 
+				if(!isShown) return;
+				closeInProgress=true; messageBoxElement.modalBox('hide'); 
+			});
 			return;
 		}
 
