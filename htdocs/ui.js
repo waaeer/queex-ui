@@ -170,7 +170,7 @@ if(!window.qwx) { window.qwx = {} }
 			if(style_opt && style_opt.match(/wait/))  b.addClass('waiting'); else b.removeClass('waiting');
 			if(style_opt && style_opt.match(/error/)) {
 				div.addClass('error'); 
-				b.prepend('<span class="fa fa-exclamation-circle" aria-hidden="true"></span>');
+				b.prepend('<span class="fa fa-exclamation-circle errorMark" aria-hidden="true"></span>');
 			} else {
 				div.removeClass('error');
 			}
@@ -502,15 +502,15 @@ window.qwx.widget = function(place,opt) {
 
 window.qwx.list = function(place,opt) { 
 	qwx.widget.call(this, place, opt);
-	this.pager_place	= opt.pager_place;
+	this.pager_place	= opt.pagerPlace     || opt.pager_place;
 	this.cid			= opt.cid;
 	this.query			= opt.query          || {};
 	this.apiMethod      = opt.apiMethod      || 'mget';
-	this.row_template 	= opt.row_template   || '#row_template';
-	this.pager_template = opt.pager_template || '#pager_template';
-	this.page_size		= opt.page_size || 1000;
-	this.pager_opt		= opt.pager_opt ? _.extend({width:5,nav:15},opt.pager_opt) : {width:5,nav:15};
-	this.data_prepare_opt   = opt.data_prepare_opt;
+	this.row_template 	= opt.rowTemplate    || opt.row_template   || '#row_template';
+	this.pager_template = opt.pageTemplate   || opt.pager_template || '#pager_template';
+	this.page_size		= opt.pageSize       || opt.page_size || 1000;
+	this.pager_opt		= opt.pagerOpt || opt.pager_opt ? _.extend({width:5,nav:15},opt.pagerOpt || opt.pager_opt) : {width:5,nav:15};
+	this.data_prepare_opt   = opt.dataPrepareOpt || opt.data_prepare_opt;
 	this.preDisplayList = opt.preDisplayList;
 	this.postDisplayRow = opt.postDisplayRow;
 	this.filterSetBack	= opt.filterSetBack || {};
@@ -725,7 +725,7 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 	if(!self.remove) { self.remove = {}; } 
 	el.find('[role=deleteButton],.deleteButton').on('click', function(e) {
 		e.stopPropagation();
-		if(confirm(self.remove.question || 'Delete object?')) { 
+		if(confirm(self.eeo.question || 'Delete object?')) { 
 			self.apiCall ('delete', [self.deleteCid || self.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
 				el.addClass('deleted-row');
 				el.slideUp();
@@ -1276,6 +1276,14 @@ window.qwx.checkbox = function(name,value) {
 	return '<input type="checkbox" name="' + _.escape(name) + '" value="1" ' 
 		+ ((value && (typeof(value) != 'object' || value.id  > 0)) ? 'checked' : '' ) 
 		+ '>';
+};
+window.qwx.fillSelect = function(el,items, value, label, postProcessOption) {
+    var label_is_func = label && _.isFunction(label) ;
+    for(var i=0,l=items.length;i<l;i++) { 
+        var opt = $('<option/>').attr('value', items[i].id).html(label_is_func ? label(items[i]) : items[i][label || 'title']).appendTo(el);
+        if(items[i].id == value) { opt.attr('selected', true); } 
+        if(postProcessOption) { postProcessOption(opt, items[i]); } 
+    }
 };
 
 window.qwx.imageWidget = function(place, opt) { 
