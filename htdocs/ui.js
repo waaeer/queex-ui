@@ -507,7 +507,7 @@ window.qwx.list = function(place,opt) {
 	this.query			= opt.query          || {};
 	this.apiMethod      = opt.apiMethod      || 'mget';
 	this.row_template 	= opt.rowTemplate    || opt.row_template   || '#row_template';
-	this.pager_template = opt.pageTemplate   || opt.pager_template || '#pager_template';
+	this.pager_template = opt.pagerTemplate  || opt.pager_template || '#pager_template';
 	this.page_size		= opt.pageSize       || opt.page_size || 1000;
 	this.pager_opt		= opt.pagerOpt || opt.pager_opt ? _.extend({width:5,nav:15},opt.pagerOpt || opt.pager_opt) : {width:5,nav:15};
 	this.data_prepare_opt   = opt.dataPrepareOpt || opt.data_prepare_opt;
@@ -1564,9 +1564,9 @@ window.qwx.dateWidget = function(place, opt) {
     qwx.widget.call(this, place, opt);
     place.html('<div class="qwx-calendar"><input class="form-control qwx-input-date"></div>');
     var div = this.div = place.find('.qwx-calendar');
-    div.datepicker({ 
-        inputs: div.find('input'), 
-        format: 'dd.mm.yyyy',
+	div.datepicker({ 
+		inputs  : div.find('input'), 
+		format  : opt.datepickerFormat || 'dd.mm.yyyy',
 		language: opt.language || 'en'
     });
 	var inp = this.inp = div.find('input');
@@ -1620,8 +1620,8 @@ window.qwx.biCalendarWidget = function(place, opt) {
 	this.is_interactive = true;
 	var self = this;
 	div.datepicker({ 
-		inputs:   div.find('input'), 
-		format:   opt.datepickerFomat || 'dd/mm/yyyy',
+		inputs  : div.find('input'), 
+		format  : opt.datepickerFormat || 'dd.mm.yyyy',
 		language: opt.language || 'en'
 	});
 	cal1.datepicker().on('changeDate', function(e) { 
