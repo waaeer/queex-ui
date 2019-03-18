@@ -894,12 +894,11 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		});
 	}
 	function select_current(val) {
+		menu.find('li').dropClass('selected');
 		if(val) {
 			menu.find('li[data-id="' + val + '"]').addClass('selected');
 		}
 	}
-
-
 
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
@@ -964,6 +963,8 @@ window.qwx.pseudoSelectWidget.prototype.objectVal = function() {
 		return this;
 	}
 }(jQuery);
+
+qwx.setJQWidget('qwxPseudoSelectWidget', 'qwx.pseudoSelectWidge');
 
 window.qwx.autocompleteWidget = function(place,opt) { // requires typeahead.jquery.js
 	qwx.widget.call(this, place, opt); 
@@ -1322,22 +1323,8 @@ window.qwx.imageWidget.prototype.val = function() {
 	}	
 };
 
-+function($) { 
-	$.fn.qwxImageWidget = function(option) { 
-		if(!option || typeof(option) == 'object') { 
-			this.data('widget', new qwx.imageWidget(this, option));
-		} else {
-			var w = this.data('widget');
-			if (option == 'val') {		
-				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-			} else if(option == 'widget') { 
-				return w ? w : null;
-			}
 
-		}
-		return this;
-	}
-}(jQuery);
+qwx.setJQWidget('qwxImageWidget', 'qwx.imageWidget');
 
 window.qwx.deepScan = function (top, selector, exclude, cb) {
 	var children = top.find('>*').not(exclude);
@@ -1543,21 +1530,8 @@ window.qwx.checkBoxArray.prototype.val = function(x) {
 		}
 	}
 };
-+function($) { 
-	$.fn.qwxCheckBoxArray = function(option) { 
-		if(!option || typeof(option) == 'object') { 
-			this.data('widget', new qwx.checkBoxArray(this, option));
-		} else {
-			var w = this.data('widget');
-			if (option == 'val') {		
-				return arguments.length == 1 ? w.val() : w.val(arguments[1]);
-			} else if(option == 'widget') { 
-				return w ? w : null;
-			}
-		}
-		return this;
-	}
-}(jQuery);
+
+qwx.setJQWidget('qwxCheckBoxArray', 'qwx.checkBoxArray');
 
 /* -- date widget -- */
 window.qwx.dateWidget = function(place, opt) { 
