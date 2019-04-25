@@ -894,7 +894,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		});
 	}
 	function select_current(val) {
-		menu.find('li').dropClass('selected');
+		menu.find('li').removeClass('selected');
 		if(val) {
 			menu.find('li[data-id="' + val + '"]').addClass('selected');
 		}
