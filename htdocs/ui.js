@@ -964,7 +964,7 @@ window.qwx.pseudoSelectWidget.prototype.objectVal = function() {
 	}
 }(jQuery);
 
-qwx.setJQWidget('qwxPseudoSelectWidget', 'qwx.pseudoSelectWidge');
+qwx.setJQWidget('qwxPseudoSelectWidget', 'qwx.pseudoSelectWidget');
 
 window.qwx.autocompleteWidget = function(place,opt) { // requires typeahead.jquery.js
 	qwx.widget.call(this, place, opt); 
