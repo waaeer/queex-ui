@@ -1369,7 +1369,7 @@ window.qwx.editDialog = function (id, opt) {
 		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; if(n) this.value = obj[n] ? obj[n] : ''; });
 		dialog.find('select').each(function() { if(this.name) { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
 		dialog.find('input[type=checkbox]').each(function() { if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
-		dialog.find('input[type=radio]').each(function() {  if(this.name) { var v = obj[this.name]; this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
+		dialog.find('input[type=radio]').each(function() {  if(this.name) { var v = obj[this.name]; this.checked = v ? ((typeof v == 'object' ? v.id : v) == this.value) : false }});
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); if(name) $(this).data('widget').val(obj[name]); });
 
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data);
