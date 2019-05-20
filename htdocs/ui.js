@@ -143,10 +143,15 @@ if(!window.qwx) { window.qwx = {} }
 			messageBoxElement.on('hidden.bs.modal', function(ev) { 
 				closeInProgress = false;
 				isShown = false;
+				var visible_modals = $('.modal:visible'); // get a list of visible modals, after closing this one
+				if( visible_modals.length > 0 ) {  // from https://github.com/sbreiler/bootstrap-multi-modals/blob/master/bootstrap-multi-modals.js
+                	$('body', document).addClass('modal-open');
+				}
 				if(opQueue.length>0) { 
 					var op = opQueue.shift();
 					op();
-				}				
+				}	
+										
 			});
 			messageBoxElement.on('shown.bs.modal', function(ev) { 
 				showInProgress = false;
