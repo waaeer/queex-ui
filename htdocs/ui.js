@@ -1276,7 +1276,14 @@ window.qwx.labelsWidget.prototype.val = function() {
 }(jQuery);
 
 window.qwx.formatDate = function(isodate) { 
-	return isodate ? (new Date(isodate.replace(" ","T").replace(/\..*/,'').replace(/\s?\+\d+$/,''))).toLocaleString() : '';
+	if(isodate) { 
+		var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)[T\s](\d+):(\d\d):(\d\d)/);
+		if(m) { 
+			var d = new Date(m[1],m[2]-1,m[3],m[4],m[5],m[6]);
+			if(d) return d.toLocaleString();
+		}
+	}
+	return '';
 };
 window.qwx.checkbox = function(name,value) { 
 	return '<input type="checkbox" name="' + _.escape(name) + '" value="1" ' 
