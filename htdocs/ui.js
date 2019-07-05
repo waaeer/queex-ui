@@ -1555,8 +1555,10 @@ window.qwx.dateWidget = function(place, opt) {
 	div.datepicker({ 
 		inputs  : div.find('input'), 
 		format  : opt.datepickerFormat || 'dd.mm.yyyy',
-		language: opt.language || 'en'
-    });
+		language: opt.language || 'en',
+		daysOfWeekHighlighted: opt.daysOfWeekHighlighted || [0,6],
+		todayHighlight: true
+	});
 	var inp = this.inp = div.find('input');
     div.datepicker().on('changeDate', function(e,m) { 
         inp.datepicker('hide');
