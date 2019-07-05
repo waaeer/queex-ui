@@ -1277,9 +1277,11 @@ window.qwx.labelsWidget.prototype.val = function() {
 
 window.qwx.formatDate = function(isodate) { 
 	if(isodate) { 
-		var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)[T\s](\d+):(\d\d):(\d\d)/);
+		var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)(.*)$/); 
 		if(m) { 
-			var d = new Date(m[1],m[2]-1,m[3],m[4],m[5],m[6]);
+			var n = m[4]? m[4].match(/[T\s](\d+):(\d\d):(\d\d)/) : null;
+			if(!n) n = [0,0,0,0];
+			var d = new Date(m[1],m[2]-1,m[3],n[1],n[2],n[3]);
 			if(d) return d.toLocaleString();
 		}
 	}
