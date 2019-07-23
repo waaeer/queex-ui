@@ -1,3 +1,10 @@
+queex-ui (0.5.4) UNRELEASED; urgency=medium
+
+  * minor fixes
+  * tinymce5 support
+
+ -- Ivan Panchenko <wao@mail.ru>  Tue, 23 Jul 2019 00:00:00 +0300
+
 queex-ui (0.5.3) UNRELEASED; urgency=medium
 
   * minor fixes
