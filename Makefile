@@ -59,7 +59,7 @@ install_tinymce5:
 	## add codesample alternative plugin
 	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
 	( cd /tmp && git clone https://github.com/waaeer/TinyMCE5-Codesample.git )
-	( cd /tmp/TinyMCE5-Codesample && /usr/local/bin/borschik -i codesample/plugin.js -o codesample/plugin.min.js )
+	( cd /tmp/TinyMCE5-Codesample && borschik -i codesample/plugin.js -o codesample/plugin.min.js )
 	( cd /tmp/TinyMCE5-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce5-plugins/{} \; )
 	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
 
