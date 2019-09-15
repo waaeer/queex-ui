@@ -1114,6 +1114,7 @@ window.qwx.labelsWidget = function(place, opt) {
 	var w = this.addWidget = opt.addWidget;
 	var self = this;
 	this.labelplace = $('<div class="labels-list"/>').css('position','relative').appendTo(place.html(''));
+	this.deleteStyle = opt.deleteStyle; // default or reversible
 	this.val(val, function() { 
     	if(w && w == 'embedded') { 
 	    	var addplace = self.embeddedAutocomplete = $('<span class="labels-list-add" style="display: inline-block;"/>').appendTo(self.labelplace);
@@ -1165,10 +1166,14 @@ window.qwx.labelsWidget.prototype.addValue = function(id,text) {
 	var item = $('<div class="labels-item"/>').attr('data-id',id) ;
 	if(this.embeddedAutocomplete) item.insertBefore(this.embeddedAutocomplete); else item.appendTo(this.labelplace);
 	var self = this;
-	$('<span class="labels-item-delete fa fa-trash"/>').on('click',function() { 
-		item.fadeOut(400, function() {
-			item.remove(); self.labelplace.trigger('resize'); 
-		} ); 
+	$('<span class="labels-item-delete fa fa-trash" title="Delete"/>').on('click',function() { 
+		if(self.deleteStyle == 'reversible') { 
+			item.toggleClass('deleted');
+		} else {
+			item.fadeOut(400, function() {
+				item.remove(); self.labelplace.trigger('resize'); 
+			} ); 
+		}
 	}).appendTo(item);
 	item.append(text);
 }
@@ -1203,7 +1208,7 @@ window.qwx.labelsWidget.prototype.val = function() {
 	var place = this.labelplace;
 	if(arguments.length==0) { 
 		var val = [];
-		$('.labels-item',place).each(function() { val.push(this.getAttribute('data-id')); });
+		$('.labels-item',place).each(function() { if(!$(this).hasClass('deleted')) val.push(this.getAttribute('data-id')); });
 		return val;
 	} else { 
 		var val = arguments[0];

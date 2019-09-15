@@ -15,6 +15,7 @@ SPRINTF_JS=1.1.1
 SNAP=0.5.1
 VIEWERJS=0.5.8
 FONTAWESOME=4.7.0
+JSTREE=3.3.8
 
 all:
 
@@ -22,7 +23,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4 install_tinymce5 install_jstools install_bootstrap3 install_bootstrap4 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js 
+install_3rdparty: install_tinymce4 install_tinymce5 install_jstools install_bootstrap3 install_bootstrap4 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js install_jstree
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
@@ -87,10 +88,11 @@ install_popper:
 
 install_jstools:
 	( if [ ! -d /tmp/jstools-qui ]; then mkdir /tmp/jstools-qui; fi )
+	rm -rf /tmp/jstools-qui/*
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js http://underscorejs.org/underscore-min.js )
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/json2.js	https://raw.github.com/douglascrockford/JSON-js/master/json2.js)
-	(wget --no-check-certificate -c -O /tmp/fa.zip  https://fontawesome.com/v$(FONTAWESOME)/assets/font-awesome-$(FONTAWESOME).zip  && unzip -o -d /tmp/jstools-qui /tmp/fa.zip && cd /tmp/jstools-qui && ln -s font-awesome-$(FONTAWESOME) font-awesome)
+	(wget --no-check-certificate -c -O /tmp/fa.zip  https://fontawesome.com/v$(FONTAWESOME)/assets/font-awesome-$(FONTAWESOME).zip  && unzip -o -d /tmp/jstools-qui /tmp/fa.zip && cd /tmp/jstools-qui && rm -fr font-awesome && ln -s font-awesome-$(FONTAWESOME) font-awesome)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js  https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.min.js)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.js      https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js    https://raw.githubusercontent.com/waaeer/typeahead.js/wao/dist/typeahead.jquery.min.js)
@@ -100,8 +102,17 @@ install_jstools:
 	(cd /tmp && rm -rf Gallery jstools-qui/blueimp-gallery/ && mkdir jstools-qui/blueimp-gallery/ && git clone https://github.com/blueimp/Gallery.git && cd Gallery && cp -r img css js /tmp/jstools-qui/blueimp-gallery/ )
 #	(cd /tmp && rm -rf Bootstrap-Image-Gallery && git clone https://github.com/blueimp/Bootstrap-Image-Gallery.git && cd Bootstrap-Image-Gallery && cp js/bootstrap-image-gallery.min.js css/bootstrap-image-gallery.min.css  /tmp/jstools-qui/)
 	
+	borschik --comments=no --input=/tmp/jstools-qui/json2.js --output=/tmp/jstools-qui/json2.min.js
 	(cd /tmp/jstools-qui && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
 	(rm -rf /tmp/jstools-qui)
+
+install_jstree:
+	( if [ ! -d /tmp/jstree ]; then mkdir /tmp/jstree; fi )
+	(wget -c  -O /tmp/jstree/jstree.zip https://github.com/vakata/jstree/zipball/$(JSTREE)  && unzip -qo /tmp/jstree/jstree.zip -d /tmp/jstree && cd /tmp/jstree/vakata-jstree-* && rm -rf `find . -type d -and -not -path './dist*' -and -not -path '.' ` && mv dist/ ../jstree/ && cd .. && rm -rf vakata-jstree-*  && rm jstree.zip)
+	(wget -c  -O /tmp/jstree/master.zip https://github.com/orangehill/jstree-bootstrap-theme/archive/master.zip && unzip -qo /tmp/jstree/master.zip  -d /tmp/jstree && cd /tmp/jstree/jstree-bootstrap-theme-* &&  rm -rf `find . -type d -and -not -path './dist*' -and -not -path '.' ` && mv dist/themes/ ../jstree-bs/ && cd .. && rm -rf jstree-bootstrap-theme-* && rm master.zip)
+	(cd /tmp/jstree && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
+	(rm -rf /tmp/jstree)
+
 
 install_bootstrap_datepicker:
 	( if [ ! -d /tmp/bsdp ]; then mkdir /tmp/bsdp; fi )
