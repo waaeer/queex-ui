@@ -520,6 +520,7 @@ window.qwx.list = function(place,opt) {
 	this.postDisplayRow = opt.postDisplayRow;
 	this.filterSetBack	= opt.filterSetBack || {};
 	this.filterModifier = {};
+	this.filterSet      = {};
 	this.enableEditor	= opt.enableEditor;
 	this.remove         = opt.remove;
 	this.editDialog     = opt.editDialog;
@@ -668,18 +669,28 @@ window.qwx.list.prototype.setBackFilters = function() {
  		this.filterSetBack[fld](this.filter[fld]);
 	}
 };
+window.qwx.list.prototype.setAllFilters = function() { 
+	for(var fld in this.filterSet) { 
+ 		this.filterSet[fld]();
+	}
+};
+
+
 window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, default_value) { 
 	// filter_fld should be an object with "val" getter/setter method, and with .on('change',cb) method
 	var list = this;
+
 	if(filter_fld[0] && filter_fld[0].tagName =='INPUT' && filter_fld[0].getAttribute('type') == 'checkbox') { //special case of checkbox: process "click" event instead of "change"
-		filter_fld.on('click', function() { list.setFilter(fld, filter_fld[0].checked ? 1 : 0);  });
+		var setter = this.filterSet[fld] =  function() { list.setFilter(fld, filter_fld[0].checked ? 1 : 0);  };
+		filter_fld.on('click', setter);
 		this.filterSetBack[fld] = function() {
         	var val = list.filter[fld]; 
 			if(list.filter.length==0  && default_value !== undefined) val=list.filter[fld]=default_value;
 			filter_fld[0].checked = (val && val > 0 );
 		};
 	} else { 
-		filter_fld.on('change', function() { list.setFilter(fld, filter_fld.val()); });
+		var setter = this.filterSet[fld] =  function() { list.setFilter(fld, filter_fld.val()); };
+		filter_fld.on('change', setter);
 		this.filterSetBack[fld] = function() { 
 			var val = list.filter[fld]; 
 			if(list.filter.length==0 && default_value !== undefined) val=list.filter[fld]=default_value;
@@ -767,6 +778,8 @@ window.qwx.list.prototype.resume = function() {
 			list.registerFilter(arguments[1],arguments[2],arguments[3]);	 
 		} else if(option == 'reload') {
 			list.reload();	 
+		} else if(option == 'setAllFilters') {
+			list.setAllFilters();	 
 		} else if(option == 'setObject') { 
 			list.setObject(arguments[1], arguments[2]);
 		} else if(option == 'openEditDialog') {
@@ -1645,8 +1658,13 @@ window.qwx.biCalendarWidget.prototype.val = function(v) {
 		        qwx.date2iso(this.cal2.datepicker('getDate'))];
 	} else {
 		this.is_interactive = false;
-		this.cal1.datepicker('setDate', (v[0] instanceof Date) ? v[0] : qwx.iso2date(v[0]) );
-		this.cal2.datepicker('setDate', (v[1] instanceof Date) ? v[1] : qwx.iso2date(v[1]) );
+		if(v) { 
+			this.cal1.datepicker('setDate', (v[0] instanceof Date) ? v[0] : qwx.iso2date(v[0]) );
+			this.cal2.datepicker('setDate', (v[1] instanceof Date) ? v[1] : qwx.iso2date(v[1]) );
+		} else { 
+			this.cal1.datepicker('setDate', null);
+			this.cal2.datepicker('setDate', null);
+		}
 		this.is_interactive = true;
 		return this;
 	}
