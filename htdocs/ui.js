@@ -527,6 +527,8 @@ window.qwx.list = function(place,opt) {
 	this.postprocessQuery = opt.postprocessQuery;
 	this.onBeforeDisplayList = opt.onBeforeDisplayList;
 	this.getList        = opt.getList; // function for use instead of default api
+	this.ignoreState    = opt.ignoreState; // disable pushState/onPopState on list navigation
+	this.ignoreArgs     = opt.ignoreArgs;  // disable taking initial filter and pages from page args
 	this.data           = opt.data; // simply load data for custom methods and templates	
 	this.deleteCid      = opt.deleteCid; //  if main cid is e.g. a view 
 
@@ -534,12 +536,11 @@ window.qwx.list = function(place,opt) {
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
 	}
-	var page_arg   = this.page_arg		= opt.page_arg  ? opt.page_arg : 'page';
+	var page_arg   = this.page_arg		= opt.page_arg    ? opt.page_arg : 'page';
 	var filter_arg = this.filter_arg	= opt.filter_arg  ? opt.filter_arg : 'F';	
 
 	var list = this;
-    if(!opt.ignorePopState) // temporary
-    {
+    if(!this.ignoreState) {
 	   $(window).on('popstate', function(ev)  {
 		   var state = ev.originalEvent.state;
 		   if(state==null) state = qwx.initialArgs.data;
@@ -549,8 +550,8 @@ window.qwx.list = function(place,opt) {
 	
 	if (this.editDialog) { 
 		this.postDisplayRow  =  function(el,o) { 
-				list.enableRowButtons(el,o);
-				if(opt.postDisplayRow) opt.postDisplayRow.call(list, el, o);
+			list.enableRowButtons(el,o);
+			if(opt.postDisplayRow) opt.postDisplayRow.call(list, el, o);
 		};
 		this.enableEditor = function(place,o,success_cb) {
 			return list.openEditDialog(o.id, success_cb);
@@ -562,9 +563,12 @@ window.qwx.list = function(place,opt) {
 			html.find('a').on('click', function(ev) { ev.stopPropagation(); return true; });
 		};
 	}
-	var args = qwx.getArgs();
-	this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
-
+	if(this.ignoreArgs) { 
+		this.displayList(1, this.defaultFilter, true);	
+	} else { 
+		var args = qwx.getArgs();
+		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
+	}
 }
 
 window.qwx.list.prototype = Object.create(window.qwx.widget.prototype);
@@ -644,7 +648,9 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 			var p = $(list.pager_place).html(qwx.t(list.pager_template, _.extend({ page_size: list.page_size, page: page, page_arg: list.page_arg, n: r.n},list.pager_opt)));
 			p.find('a').on('click', function()  {
 				var page = this.getAttribute('page');
-				qwx.pushState("page " + page,  null, [ list.page_arg, page, list.filter_arg, JSON.stringify(filter)]);
+				if(!list.ignoreState) {
+					qwx.pushState("page " + page,  null, [ list.page_arg, page, list.filter_arg, JSON.stringify(filter)]);
+				}
 				list.displayList(page,filter);
 				return false;
 			});
@@ -661,7 +667,9 @@ window.qwx.list.prototype.setFilter = function(fld,val) {
 	}
 	var filter_with_nulls = _.extend({},this.filter, add);
 	var filter = this.filter =  _.pick(filter_with_nulls, function(v,k,o) { return (v!==null); } );
-	qwx.pushState("filter " ,  null, [ this.page_arg, 1, this.filter_arg, JSON.stringify(filter)]);
+	if(!this.ignoreState) {
+		qwx.pushState("filter " ,  null, [ this.page_arg, 1, this.filter_arg, JSON.stringify(filter)]);
+	}
 	this.displayList(1, filter);
 };
 window.qwx.list.prototype.setBackFilters = function() {
