@@ -722,11 +722,11 @@ window.qwx.list.prototype.setObject = function(obj, opt) {
 			this.postDisplayRow.call(this, new_row, obj );
 		}	
 		return true;
-	} else if (opt.ifnot == 'reload') {
+	} else if (opt && opt.ifnot == 'reload') {
 		this.reload();	
 	} else {
 		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
-		if(opt.ifnot == 'top') {
+		if(opt && opt.ifnot == 'top') {
 			new_row.prependTo(this.place);
 		} else {
 			new_row.appendTo(this.place);
