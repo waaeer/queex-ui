@@ -25,27 +25,30 @@ if(!window.qwx) { window.qwx = {} }
 	
 	};
 
+	var zbase = 1040;
 	function modalBox(x,opt) { 
+		var level;
 		x.one('show.bs.modal', function() { 
+			level = modalStack.length;
 			modalStack.push(x);
-			this.style.zIndex = 1055 + 10 * modalStack.length;
+			this.style.zIndex = zbase + 10 * level;
 			var backdrops = $('.modal-backdrop');
 			// raise previous backdrop; on "shown" return it back:
-			var last_backdrop = backdrops[backdrops.length-1];
+			var last_backdrop = backdrops[level];
 			if(last_backdrop) { 
-				last_backdrop.style.zIndex = 1050 + 10 * modalStack.length;
+				last_backdrop.style.zIndex = zbase + 5 + 10 * level;
 			}
 			
 		});
 		x.one('shown.bs.modal', function() { 
 			var backdrops = $('.modal-backdrop');
-			var prev_backdrop = backdrops[backdrops.length-2];
+			var prev_backdrop = backdrops[level];
 			if(prev_backdrop) { 
-				prev_backdrop.style.zIndex = 1040 + 10 * modalStack.length;
+				prev_backdrop.style.zIndex = zbase - 5 + 10 * level;
 			}
-			var last_backdrop = backdrops[backdrops.length-1];
+			var last_backdrop = backdrops[level+1];
 			if(last_backdrop) {
-				last_backdrop.style.zIndex = 1050 + 10 * modalStack.length;
+				last_backdrop.style.zIndex = zbase + 5 + 10 * level;
 			}
 			x.data('focus_in', document.activeElement);
 			var af = $(this).find('[autofocus]');
