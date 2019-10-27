@@ -10,6 +10,8 @@
 .modal.error .modal-body {
  	color: #770000;
 }
+.modal.fade.show { overflow-y: scroll; } 
+
 .labels-list { 
 	border: solid #777777 1px;
 	border-radius: 1px;
