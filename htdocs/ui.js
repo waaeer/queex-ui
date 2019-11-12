@@ -559,6 +559,7 @@ window.qwx.list = function(place,opt) {
 		this.enableEditor = function(place,o,success_cb) {
 			return list.openEditDialog(o.id, success_cb);
 		}
+		if(this.editDialog.edit_arg === undefined) this.editDialog.edit_arg = 'edit';
 	}
 	if(opt.withRowSelection) { 
 		this.makeRowSelectable = function(html) {
@@ -570,6 +571,9 @@ window.qwx.list = function(place,opt) {
 		this.displayList(1, this.defaultFilter, true);	
 	} else { 
 		var args = qwx.getArgs();
+		if(this.editDialog && this.editDialog.edit_arg && args.arg(this.editDialog.edit_arg)) { 
+			this.openEditDialog(args.arg(this.editDialog.edit_arg));
+		}  
 		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 	}
 }
