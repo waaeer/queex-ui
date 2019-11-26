@@ -4,12 +4,13 @@
 	background-repeat: no-repeat;
 	padding-left: 40px;
 }
-.modal-body .glyphicon {
+.modal-body .glyphicon, .modal-body .fa.errorMark {
 	padding-right: 10px;
 }
 .modal.error .modal-body {
  	color: #770000;
 }
+
 .modal.fade.show { overflow-y: scroll; } 
 
 .labels-list { 

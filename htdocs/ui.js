@@ -109,7 +109,7 @@ if(!window.qwx) { window.qwx = {} }
 
 		var modal = $('<div/>');
 		modal.addClass('modal fade').html(
-' <div class="modal-dialog" style="width:' + width + ';"><div class="modal-content"><div class="modal-header">' + 
+' <div class="modal-dialog" style="width:' + width + '; max-width:' + width + ';"><div class="modal-content"><div class="modal-header">' + 
 '		 <h4 class="modal-title"></h4>' + 
 (option && option.topClose ? '<button type="button" class="btn btn-light btn-sm" data-dismiss="modal" style="float:right;"><i class="fa fa-times"></i></button>' : '') +
 '</div><div class="modal-body"></div><div class="modal-footer">' + 
