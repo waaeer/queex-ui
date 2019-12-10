@@ -591,10 +591,11 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 		data_prepare_view_opt: this.data_prepare_opt,
 		afterSave: function(o) { 
 			if(success_cb) {
-				success_cb.call(o);
+				success_cb.call(o.obj);
 			} else { 
-				self.setObject(o,{ifnot: 'reload'});
+				self.setObject(o.obj,{ifnot: self.editDialog.actionAfterSaveNew || 'reload'});
 			}
+			self.place.trigger('afterSave', self, o.obj);
 		}
 	}, this.editDialog, opt));
 }
@@ -1411,7 +1412,7 @@ window.qwx.editDialog = function (id, opt) {
 		var dialog = modal.find('.modal-dialog');
 		self.obj = obj;
 		self.modal = modal;
-		modal.modalBox({backdrop: 'static'});
+		modal.modalBox({backdrop: 'static', keyboard: false});
 		
 		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; if(n) this.value = obj[n] ? obj[n] : ''; });
 		dialog.find('select').each(function() { if(this.name) { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
