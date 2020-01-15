@@ -168,7 +168,7 @@ if(!window.qwx) { window.qwx = {} }
 		}
 		return messageBoxElement;
 	};		
-	window.qwx.messageBox = function(title,text,close,style_opt) {
+	window.qwx.messageBox = function(title,text,close,style_opt, on_close) {
 		var div = init();
 		function func() { 
 			var h = div.find('.modal-header'), f=div.find('.modal-footer'), b=div.find('.modal-body');
@@ -190,7 +190,10 @@ if(!window.qwx) { window.qwx = {} }
 			div[0].focus();
 			f.find('.btn-default').each(function() { this.focus();});
 			showInProgress = true;
-			div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });
+			div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });h
+			if(on_close) { 
+				div.on('hide.bs.modal', on_close);			
+			}
 		}
 		if(closeInProgress || showInProgress) { 
 			opQueue.push(func);
@@ -562,9 +565,10 @@ window.qwx.list = function(place,opt) {
 		if(this.editDialog.edit_arg === undefined) this.editDialog.edit_arg = 'edit';
 	}
 	if(opt.withRowSelection) { 
-		this.makeRowSelectable = function(html) {
-			html.on('click', function() { $(this).toggleClass('selected'); list.place.trigger('selectionChange', html); });
-			html.find('a').on('click', function(ev) { ev.stopPropagation(); return true; });
+		this.makeRowSelectable = function(html,obj) {
+			var clickable = _.isString(opt.withRowSelection) ? html.find(opt.withRowSelection) : html; // withRowSelection может быть строкой - тогда это селектор внутри строки списка
+			clickable.on('click', function() { html.toggleClass('selected'); list.place.trigger('selectionChange', html, obj); });
+			clickable.find('a').on('click', function(ev) { ev.stopPropagation(); return true; });
 		};
 	}
 	if(this.ignoreArgs) { 
@@ -591,11 +595,11 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 		data_prepare_view_opt: this.data_prepare_opt,
 		afterSave: function(o) { 
 			if(success_cb) {
-				success_cb.call(o.obj);
+				success_cb.call(o);
 			} else { 
-				self.setObject(o.obj,{ifnot: self.editDialog.actionAfterSaveNew || 'reload'});
+				self.setObject(o,{ifnot: self.editDialog.actionAfterSaveNew || 'reload'});
 			}
-			self.place.trigger('afterSave', self, o.obj);
+			self.place.trigger('afterSave', [self, o]);
 		}
 	}, this.editDialog, opt));
 }
@@ -610,10 +614,10 @@ window.qwx.list.prototype.getData = function (page,filter,cb) {
 	}	
 	var query = filter ? _.extend({}, this.query, realFilter) : this.query;
 	if(this.postprocessQuery)  this.postprocessQuery(query);
-	this.place.trigger('getData', this, query, page);
+	this.place.trigger('getData', [this, query, page]);
 	var self = this;
 	var modcb = function(res) { 
-		self.place.trigger('gotData', this, res);
+		self.place.trigger('gotData', [this, res]);
 		if(cb) cb(res);
 	};
 	if(query.__dont_get_data) { 
@@ -647,7 +651,7 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 		for(var i=0,l=r.list.length;i<l;i++) { 
 			var html = qwx.$t(list.row_template, { o: r.list[i], list: list });
 			html.appendTo(list.place);
-			if(list.makeRowSelectable) list.makeRowSelectable(html);
+			if(list.makeRowSelectable) list.makeRowSelectable(html, r.list[i]);
 			if(postDisplayRow) { 
 				postDisplayRow.call(list, html, r.list[i]);
 			}
@@ -719,13 +723,19 @@ window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, d
 window.qwx.list.prototype.reload = function() { 
 	this.displayList(this.page, this.filter);
 };
+window.qwx.list.prototype.reloadObject = function(id) { 
+	var self = this;
+	self.getData(1,{id:id}, function(list) { 
+		self.setObject(list.list[0]);
+	});
+};
 window.qwx.list.prototype.setObject = function(obj, opt) { 
 	var place = document.getElementById('row-' + obj.id);
 	if(!place) place = this.place.find('[data-id=' + obj.id + ']')[0];
 	if(place) { 
 		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
 		$(place).replaceWith(new_row); 
-		if(this.makeRowSelectable) this.makeRowSelectable(new_row);
+		if(this.makeRowSelectable) this.makeRowSelectable(new_row, obj);
 		if(this.postDisplayRow) { 
 			this.postDisplayRow.call(this, new_row, obj );
 		}	
@@ -739,7 +749,7 @@ window.qwx.list.prototype.setObject = function(obj, opt) {
 		} else {
 			new_row.appendTo(this.place);
 		}
-		if(this.makeRowSelectable) this.makeRowSelectable(new_row);
+		if(this.makeRowSelectable) this.makeRowSelectable(new_row, obj);
 		if(this.postDisplayRow) {
 			this.postDisplayRow.call(this, new_row, obj );
 		}
@@ -1522,7 +1532,7 @@ window.qwx.editDialog = function (id, opt) {
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
-			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1] : r.result[0]);
+			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1].obj : r.result[0].obj);
 			form.closest('.modal').modal('hide');
 			window.qwx.closeMessageBox();
 			return true;
