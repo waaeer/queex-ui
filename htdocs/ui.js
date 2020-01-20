@@ -1700,6 +1700,71 @@ window.qwx.biCalendarWidget.prototype.val = function(v) {
 qwx.setJQWidget('qwxDateWidget', 'qwx.dateWidget');
 qwx.setJQWidget('qwxBiCalendarWidget', 'qwx.biCalendarWidget');
 
+/*-- fileWidget -- */
+window.qwx.fileWidget = function(place, opt) { 
+	qwx.widget.call(this, place, opt);
+	this.file_place    = opt.file_place;
+	this.file_template = opt.file_template || '<% if(file.content_type.match("^image/")) { %>'
+	 	+ '<div style="display:inline-block;position: relative;"><button class="btn btn-xs btn-delete" style="position: absolute; top:2px;right:2px; z-index:800;"><i class="fa fa-trash"></i></button>'
+	 	+ '<img style="max-width:400px;" src="<%- widget.file_prefix %>/<%- file.path %>">'
+		+ '<% if(file.width && file.height) { %><div class="c"><%= file.width %>x<%= file.height %>px</div><% } %>'
+		+ '</div>'
+		+ '	<% } else { %> '
+		+ '<a href="<%- widget.file_prefix %>/<%- file.path %>"><%- file.name %></a>'
+		+ ' <% } %>';
+	this.file          = undefined;
+	this.file_prefix   = opt.prefix;
+	this.getFileMetadataById = opt.getFileMetadataById;
+	if(!this.getFileMetadataById) {
+		throw 'getMetadataById is not specified';
+	}
+	var self = this;
+	this.btn = $('<button class="btn btn-upload"/>').html(opt.uploadButtonText || 'Upload file').appendTo(place);
+	this.btn.on('click', function() { 
+		window.upload_callback = function(data) { 
+			if(opt.debug) console.log(data);
+			if(_.isArray(data)) data = data[0];
+			self.setFile(data);
+		};
+		$('#upload_form input').click();
+	});
+};
+
+window.qwx.fileWidget.prototype = Object.create(window.qwx.widget.prototype);
+window.qwx.fileWidget.prototype.constructor = window.qwx.fileWidget;
+
+window.qwx.fileWidget.prototype.setFile = function(f) { 
+	this.value = f.id;
+console.log('setFile', f, this.file_prefix);
+	var self = this;
+	$(this.file_place).html(qwx.t(this.file_template, {file:f, widget:this}));
+	$(this.file_place).find('.btn-delete').on('click', function() { self.val(null); });
+}
+window.qwx.fileWidget.prototype.val = function() { 
+	var self = this;
+	if (arguments.length == 0 ) {
+		return this.value;
+	} else {
+		var f_id = this.value = arguments[0];
+		if(f_id) { 
+			this.getFileMetadataById(f_id, function(obj) { self.setFile(obj);});
+		} else { 
+			$(this.file_place).html('');
+		}
+		return self;
+	}
+}
+qwx.setJQWidget('qwxFileWidget', 'qwx.fileWidget');
+
+
+/* -- end file widget -- */
+
+
+
+
+
+
+
 
 /* -- val() and w() for widgets ---*/
 +function($) { 
