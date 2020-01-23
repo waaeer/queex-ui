@@ -315,6 +315,11 @@ if(!window.qwx) { window.qwx = {} }
 		args = (args===null) ? cur_args: new qwx.args(args);
 		history.pushState(cur_args.data, name, "?" + args.modify(changeArgs).serialize() );							
 	}
+	window.qwx.replaceState = function(name, args, changeArgs) {
+		var cur_args = qwx.getArgs();
+		args = (args===null) ? cur_args: new qwx.args(args);
+		history.replaceState(cur_args.data, name, "?" + args.modify(changeArgs).serialize() );
+	}
 	window.qwx.checkbox_wrap = function(sel, false_null) { 
 		return new qwx.checkBoxWrapper(sel, false_null);		
 	}
@@ -544,6 +549,7 @@ window.qwx.list = function(place,opt) {
 	}
 	var page_arg   = this.page_arg		= opt.page_arg    ? opt.page_arg : 'page';
 	var filter_arg = this.filter_arg	= opt.filter_arg  ? opt.filter_arg : 'F';	
+	var edit_arg   = this.edit_arg	 	= opt.edit_arg; // if not defined, editing does not change url
 
 	var list = this;
     if(!this.ignoreState) {
@@ -551,6 +557,8 @@ window.qwx.list = function(place,opt) {
 		   var state = ev.originalEvent.state;
 		   if(state==null) state = qwx.initialArgs.data;
 		   list.displayList(state[page_arg], list.json2filter(state[filter_arg]), true );
+		   if(list.editDialog && edit_arg && state[edit_arg]) 
+				list.openEditDialog(state[edit_arg]);
 	   });
     }
 	
@@ -562,7 +570,6 @@ window.qwx.list = function(place,opt) {
 		this.enableEditor = function(place,o,success_cb) {
 			return list.openEditDialog(o.id, success_cb);
 		}
-		if(this.editDialog.edit_arg === undefined) this.editDialog.edit_arg = 'edit';
 	}
 	if(opt.withRowSelection) { 
 		this.makeRowSelectable = function(html,obj) {
@@ -575,8 +582,8 @@ window.qwx.list = function(place,opt) {
 		this.displayList(1, this.defaultFilter, true);	
 	} else { 
 		var args = qwx.getArgs();
-		if(this.editDialog && this.editDialog.edit_arg && args.arg(this.editDialog.edit_arg)) { 
-			this.openEditDialog(args.arg(this.editDialog.edit_arg));
+		if(this.editDialog && edit_arg && args.arg(edit_arg)) { 
+			this.openEditDialog(args.arg(edit_arg));
 		}  
 		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 	}
@@ -587,6 +594,9 @@ window.qwx.list.prototype.constructor = window.qwx.list;
 
 window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) { 
 	var self = this;
+	if(this.edit_arg) { 
+		qwx.replaceState("edit " ,  null, [ this.edit_arg, obj_id]);
+	}
 	return new qwx.editDialog(obj_id, _.extend({
 		cid      : this.cid,
 		apiCall  : this.apiCall,
@@ -600,6 +610,9 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 				self.setObject(o,{ifnot: self.editDialog.actionAfterSaveNew || 'reload'});
 			}
 			self.place.trigger('afterSave', [self, o]);
+		},
+		onClose: function() {
+			qwx.replaceState("edit " ,  null, [ self.edit_arg, null]);
 		}
 	}, this.editDialog, opt));
 }
@@ -1406,6 +1419,7 @@ window.qwx.editDialog = function (id, opt) {
     this.apiMethod        = opt.apiMethod      || 'get';
 	this.saveCid		  = opt.saveCid        || this.cid;
 	var preEditCalls      = opt.preEditCalls;
+	var onClose           = opt.onClose;
 	var self = this;
 
 	var openModal = function(obj, add_data) { 
@@ -1433,7 +1447,7 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data);
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
-		modal.one('hidden.bs.modal', function() { modal.remove();  });
+		modal.one('hidden.bs.modal', function() { modal.remove(); if(onClose) onClose(); });
 		modal.find('.btn-save,[role=saveButton]').on('click', function() {
 			self.saveDialog(this );
 		});
@@ -1445,8 +1459,8 @@ window.qwx.editDialog = function (id, opt) {
 	
 	if(preEditCalls && preEditCalls.length) { 
 		if(id) { 
-			var calls = [this.apiMethod, [ this.cid, id, this.data_prepare_opt]];
-			calls.concat(preEditCalls);
+			var calls = [[this.apiMethod,  this.cid, id, this.data_prepare_opt]];
+			calls = calls.concat(preEditCalls);
 			this.apiCall('txn', calls, null, function(r) { 
 				var res = r.result.shift();
 				openModal(res.obj,  r.result);
