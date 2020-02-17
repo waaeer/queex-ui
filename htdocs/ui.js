@@ -781,7 +781,7 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 	el.find('[role=deleteButton],.deleteButton').on('click', function(e) {
 		e.stopPropagation();
 		if(confirm(self.remove.question || 'Delete object?')) { 
-			self.apiCall ('delete', [self.deleteCid || self.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
+			self.apiCall ('delete', [self.deleteCid || self.cid, obj.id], { message: self.remove.message ||'Deleting...' }, function() { 
 				el.addClass('deleted-row');
 				el.slideUp();
 				if(self.postDeleteRow) self.postDeleteRow(el);
