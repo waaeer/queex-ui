@@ -1732,12 +1732,14 @@ window.qwx.fileWidget = function(place, opt) {
 	if(!this.getFileMetadataById) {
 		throw 'getMetadataById is not specified';
 	}
+	this.debug = opt.debug;
 	var self = this;
 	this.btn = $('<button class="btn btn-upload"/>').html(opt.uploadButtonText || 'Upload file').appendTo(place);
 	this.btn.on('click', function() { 
-		window.upload_callback = function(data) { 
-			if(opt.debug) console.log(data);
-			if(_.isArray(data)) data = data[0];
+		window.upload_callback = function() { 
+			if(self.debug) console.log('callbackargs',arguments);
+console.log('call upload callback arguments=', arguments);
+			var data = self.callbackArgs2File(arguments);
 			self.setFile(data);
 		};
 		$('#upload_form input').click();
@@ -1748,11 +1750,16 @@ window.qwx.fileWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.fileWidget.prototype.constructor = window.qwx.fileWidget;
 
 window.qwx.fileWidget.prototype.setFile = function(f) { 
+	if(f && !_.isObject(f)) throw 'qwx.FileWidget.setFile argument should be an object'; 
 	this.value = f.id;
-console.log('setFile', f, this.file_prefix);
 	var self = this;
 	$(this.file_place).html(qwx.t(this.file_template, {file:f, widget:this}));
 	$(this.file_place).find('.btn-delete').on('click', function() { self.val(null); });
+}
+window.qwx.fileWidget.prototype.callbackArgs2File = function(args) { 
+	var data = args[0];
+	if(_.isArray(data)) data = data[0];
+	return data;
 }
 window.qwx.fileWidget.prototype.val = function() { 
 	var self = this;
