@@ -1738,7 +1738,6 @@ window.qwx.fileWidget = function(place, opt) {
 	this.btn.on('click', function() { 
 		window.upload_callback = function() { 
 			if(self.debug) console.log('callbackargs',arguments);
-console.log('call upload callback arguments=', arguments);
 			var data = self.callbackArgs2File(arguments);
 			self.setFile(data);
 		};
