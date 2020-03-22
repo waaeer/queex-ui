@@ -594,7 +594,7 @@ window.qwx.list.prototype.constructor = window.qwx.list;
 
 window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) { 
 	var self = this;
-	if(this.edit_arg) { 
+	if(this.edit_arg && ! this.ignoreState) { 
 		qwx.replaceState("edit " ,  null, [ this.edit_arg, obj_id]);
 	}
 	return new qwx.editDialog(obj_id, _.extend({
@@ -612,7 +612,7 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 			self.place.trigger('afterSave', [self, o]);
 		},
 		onClose: function() {
-			qwx.replaceState("edit " ,  null, [ self.edit_arg, null]);
+			if(!self.ignoreState && self.edit_arg) qwx.replaceState("edit " ,  null, [ self.edit_arg, null]);
 		}
 	}, this.editDialog, opt));
 }
