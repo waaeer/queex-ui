@@ -574,8 +574,12 @@ window.qwx.list = function(place,opt) {
 	if(opt.withRowSelection) { 
 		this.makeRowSelectable = function(html,obj) {
 			var clickable = _.isString(opt.withRowSelection) ? html.find(opt.withRowSelection) : html; // withRowSelection может быть строкой - тогда это селектор внутри строки списка
-			clickable.on('click', function() { html.toggleClass('selected'); list.place.trigger('selectionChange', html, obj); });
-			clickable.find('a').on('click', function(ev) { ev.stopPropagation(); return true; });
+			clickable.on('click', function(ev) {
+				var clicked = ev.originalEvent.target, $clicked = $(clicked);
+				if($clicked.hasClass('dropdown-toggle') || clicked.tagName == 'A' || $clicked.closest('a').length>0 ) return;
+				html.toggleClass('selected');
+				list.place.trigger('selectionChange', html, obj);
+			});
 		};
 	}
 	if(this.ignoreArgs) { 
@@ -776,6 +780,7 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 	el.find('[role=editButton],.editButton').first().on('click', function(e) { 
 		e.stopPropagation();
 		self.enableEditor(el,obj);
+		return false;
 	});
 	if(!self.remove) { self.remove = {}; } 
 	el.find('[role=deleteButton],.deleteButton').on('click', function(e) {
