@@ -1745,6 +1745,7 @@ window.qwx.fileWidget = function(place, opt) {
 			if(self.debug) console.log('callbackargs',arguments);
 			var data = self.callbackArgs2File(arguments);
 			self.setFile(data);
+			$(self.place).trigger('change');
 		};
 		$('#upload_form input').click();
 	});
