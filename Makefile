@@ -138,7 +138,8 @@ install_tinymce_youtube:
 	rm -rf /tmp/tmyout/*
 	(cd /tmp/tmyout/ && git clone https://github.com/gtraxx/tinymce-plugin-youtube.git )
 	(cd /tmp/tmyout/ && unzip  tinymce-plugin-youtube/dist/youtube.zip )
-#	( if [ ! -d $(QLIB)/j/tinymce4/js/tinymce/plugins/youtube/ ]; then $(SUDO) mkdir $(QLIB)/j/tinymce4/js/tinymce/plugins/youtube/; fi )
+	(cd /tmp/tmyout/ && find youtube -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/tinymce5/js/tinymce/plugins/{} \; )
+	(cd /tmp/tmyout/ && git checkout tinymce4 && unzip  tinymce-plugin-youtube/dist/youtube.zip )
 	(cd /tmp/tmyout/ && find youtube -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/tinymce4/js/tinymce/plugins/{} \; )
 
 install_viewer_js:
