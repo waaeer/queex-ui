@@ -73,6 +73,9 @@ if(!window.qwx) { window.qwx = {} }
 			}
 			x.data('isShown', true);
 		});
+		x.one('hide.bs.modal', function() {
+			x.data('hideInProgress', true);
+		});
 		x.one('hidden.bs.modal', function() { 
 			modalStack.pop();
 			var backdrops = $('.modal-backdrop');
@@ -92,6 +95,8 @@ if(!window.qwx) { window.qwx = {} }
 			modalBox($(this), option);
 		} else if (option == 'isShown') {
 			return $(this).data('isShown');
+		} else if (option == 'hideInProgress') {
+			return $(this).data('hideInProgress');
 		} else if (option == 'hide') { 
 			if ($(this).data('isShown')) { 
 				$(this).modal('hide');
@@ -109,8 +114,8 @@ if(!window.qwx) { window.qwx = {} }
 
 		var modal = $('<div/>');
 		modal.addClass('modal fade').html(
-' <div class="modal-dialog" style="width:' + width + '; max-width:' + width + ';"><div class="modal-content"><div class="modal-header">' + 
-'		 <h4 class="modal-title"></h4>' + 
+' <div class="modal-dialog" style="width:' + width + '; max-width:' + width + ';"><div class="modal-content"><div class="modal-header">' +
+'		 <h4 class="modal-title"></h4>' +
 (option && option.topClose ? '<button type="button" class="btn btn-light btn-sm" data-dismiss="modal" style="float:right;"><i class="fa fa-times"></i></button>' : '') +
 '</div><div class="modal-body"></div><div class="modal-footer">' + 
 (option && option.okButton ? 
@@ -119,7 +124,7 @@ if(!window.qwx) { window.qwx = {} }
    : ''
  )
 ) + (!option || ! option.topClose ?
-'        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>' : '' 
+'        <button type="button" class="btn btn-default" data-dismiss="modal">' + (option.closeButton || 'Закрыть') + '</button>' : ''
 )+
 '      </div></div></div></div>'
 		).appendTo($('body')).find('.modal-body').append(middle);
@@ -1414,6 +1419,7 @@ window.qwx.editDialog = function (id, opt) {
 	this.cid = opt.cid;
 	this.data_prepare_opt = opt.data_prepare_opt;
 	this.data_prepare_view_opt = opt.data_prepare_view_opt || opt.data_prepare_opt;
+	this.getData          = opt.getData;
 	this.fillDialog       = opt.fillDialog;
 	this.collectData	  = opt.collectData;
 	this.afterSave		  = opt.afterSave;
@@ -1425,6 +1431,8 @@ window.qwx.editDialog = function (id, opt) {
 	this.saveCid		  = opt.saveCid        || this.cid;
 	var preEditCalls      = opt.preEditCalls;
 	var onClose           = opt.onClose;
+	var preClose          = opt.beforeClose;
+	this.save             = opt.saveObject || this.save;
 	var self = this;
 
 	var openModal = function(obj, add_data) { 
@@ -1452,6 +1460,7 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data);
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
+		if(preClose) modal.on('hide.bs.modal', function() { preClose(self); });
 		modal.one('hidden.bs.modal', function() { modal.remove(); if(onClose) onClose(); });
 		modal.find('.btn-save,[role=saveButton]').on('click', function() {
 			self.saveDialog(this );
@@ -1476,10 +1485,11 @@ window.qwx.editDialog = function (id, opt) {
 			});
 		}
 	} else { 
-		if(id) { 
-			this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {
-				openModal(r.obj);				
-			});
+		if(id) {
+			if(this.getData)
+				this.getData(id, function(obj) { openModal(obj) });
+			else
+				this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {openModal(r.obj);});
 		} else { 	
 			openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})));
 		}		
@@ -1491,7 +1501,7 @@ window.qwx.editDialog = function (id, opt) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
 		var postponed_radio_validation = {}, empty_fields = [];
-		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', function() { 
+		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', function() {
 			var el   = this;
 			var name = this.getAttribute('name');
 			var type = this.getAttribute('type');
@@ -1550,17 +1560,24 @@ window.qwx.editDialog = function (id, opt) {
 			try { self.collectData(form, attr, ops, btn); } catch(err) { qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
-		self.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
+		self.save(form, ops, function(r) {
 			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1].obj : r.result[0].obj);
-			form.closest('.modal').modal('hide');
+			var modal = form.closest('.modal');
+			if(!modal.modalBox('hideInProgress')) modal.modalBox('hide');
 			window.qwx.closeMessageBox();
-			return true;
+
 		});
 	};
 	return false;
 };
 window.qwx.editDialog.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.editDialog.prototype.constructor = window.qwx.editDialog;
+window.qwx.editDialog.prototype.save = function(form, ops, cb) { 
+	this.apiCall("txn" , ops,  { message: self.saveMessage || 'Saving...' }, function(r) {
+		cb(r);
+		return true;
+	});
+}
 window.qwx.editDialog.prototype.close = function() { 
 		this.modal.modal('hide');
 }
@@ -1613,16 +1630,17 @@ qwx.setJQWidget('qwxCheckBoxArray', 'qwx.checkBoxArray');
 /* -- date widget -- */
 window.qwx.dateWidget = function(place, opt) { 
     qwx.widget.call(this, place, opt);
-    place.html('<div class="qwx-calendar"><input class="form-control qwx-input-date"></div>');
-    var div = this.div = place.find('.qwx-calendar');
-	div.datepicker({ 
-		inputs  : div.find('input'), 
+    var div = this.div = $('<div class="qwx-calendar"/>').appendTo(place);
+	var inp = this.inp = $('<input/>').appendTo(div);
+	inp.addClass(opt.inputClass === undefined ? 'form-control qwx-input-date' : opt.inputClass);
+    div.datepicker({ 
+		inputs  : inp, 
 		format  : opt.datepickerFormat || 'dd.mm.yyyy',
 		language: opt.language || 'en',
 		daysOfWeekHighlighted: opt.daysOfWeekHighlighted || [0,6],
 		todayHighlight: true
 	});
-	var inp = this.inp = div.find('input');
+
     div.datepicker().on('changeDate', function(e,m) { 
         inp.datepicker('hide');
     });
