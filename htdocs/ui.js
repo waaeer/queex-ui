@@ -944,6 +944,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 				setmenuhandlers(menu.find('li'));
 				select_current(val);
 				if(onload) onload();
+				place.trigger('menuLoaded');
 			});
 		}
 	};
