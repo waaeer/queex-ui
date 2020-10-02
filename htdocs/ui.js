@@ -563,7 +563,9 @@ window.qwx.list = function(place,opt) {
 		   if(state==null) state = qwx.initialArgs.data;
 		   list.displayList(state[page_arg], list.json2filter(state[filter_arg]), true );
 		   if(list.editDialog && edit_arg && state[edit_arg]) 
-				list.openEditDialog(state[edit_arg]);
+				var id=state[edit_arg];
+				if(id=='undefined') id=undefined;
+				list.openEditDialog(id);
 	   });
     }
 	
@@ -591,8 +593,12 @@ window.qwx.list = function(place,opt) {
 		this.displayList(1, this.defaultFilter, true);	
 	} else { 
 		var args = qwx.getArgs();
-		if(this.editDialog && edit_arg && args.arg(edit_arg)) { 
-			this.openEditDialog(args.arg(edit_arg));
+		if(this.editDialog && edit_arg ) { 
+			var id=args.arg(edit_arg);
+			if(id) { 
+				if(id=='undefined') id=undefined;
+				this.openEditDialog(id);
+			}
 		}  
 		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 	}
@@ -814,7 +820,7 @@ window.qwx.list.prototype.resume = function() {
 +function($) {
 
 	function methods(option) { 
-		var list = this.data('qwxlist');
+		var list = this.data('widget');
 		if(option == 'exists') { 
 			return list ? true : false; 
 		} else if(option == 'widget') { 
@@ -1415,6 +1421,8 @@ window.qwx.deepScan = function (top, selector, exclude, cb) {
 		window.qwx.deepScan(children, selector, exclude, cb);
 };
 /* -- editDialog -- */
+window.qwx.new_id_counter = 0;
+
 window.qwx.editDialog = function (id, opt) { 
 	qwx.widget.call(this, null, opt);
 	this.cid = opt.cid;
@@ -1471,7 +1479,9 @@ window.qwx.editDialog = function (id, opt) {
 	if(preEditCalls && preEditCalls.constructor.name == 'Function') { 
 		preEditCalls = preEditCalls(id ? { id: id } : null);
 	}
-	
+	function get_new_object_id() { 
+		return '__id_new' + qwx.new_id_counter++; 
+	}
 	if(preEditCalls && preEditCalls.length) { 
 		if(id) { 
 			var calls = [[this.apiMethod,  this.cid, id, this.data_prepare_opt]];
@@ -1482,7 +1492,7 @@ window.qwx.editDialog = function (id, opt) {
 			});
 		} else { 
 			this.apiCall('txn', preEditCalls, null, function(r) { 
-				openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})), r.result);
+				openModal(_.extend({ id: get_new_object_id(), __is_new: true}, (opt.defaults || {})), r.result);
 			});
 		}
 	} else { 
@@ -1492,7 +1502,7 @@ window.qwx.editDialog = function (id, opt) {
 			else
 				this.apiCall(this.apiMethod, [ this.cid, id, this.data_prepare_opt], null, function(r) {openModal(r.obj);});
 		} else { 	
-			openModal(_.extend({ id:  '__id_new', __is_new: true}, (opt.defaults || {})));
+			openModal(_.extend({ id: get_new_object_id(), __is_new: true}, (opt.defaults || {})));
 		}		
 	}
 	this.saveDialog = function(btn) { 
