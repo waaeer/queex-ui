@@ -28,7 +28,8 @@ if(!window.qwx) { window.qwx = {} }
 	var zbase = 1040;
 	function modalBox(x,opt) { 
 		var level;
-		x.one('show.bs.modal', function() { 
+		x.one('show.bs.modal', function(ev) { 
+			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			level = modalStack.length;
 			modalStack.push(x);
 			this.style.zIndex = zbase + 10 * level;
@@ -38,9 +39,10 @@ if(!window.qwx) { window.qwx = {} }
 			if(last_backdrop) { 
 				last_backdrop.style.zIndex = zbase + 5 + 10 * level;
 			}
-			
+			ev.stopPropagation();
 		});
-		x.one('shown.bs.modal', function() { 
+		x.one('shown.bs.modal', function(ev) { 
+			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			var backdrops = $('.modal-backdrop');
 			var prev_backdrop = backdrops[level];
 			if(prev_backdrop) { 
@@ -72,11 +74,15 @@ if(!window.qwx) { window.qwx = {} }
 				x.data('hideonshow', false);
 			}
 			x.data('isShown', true);
+			ev.stopPropagation();
 		});
-		x.one('hide.bs.modal', function() {
+		x.one('hide.bs.modal', function(ev) {
+			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			x.data('hideInProgress', true);
+			ev.stopPropagation();
 		});
-		x.one('hidden.bs.modal', function() { 
+		x.one('hidden.bs.modal', function(ev) { 
+			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			modalStack.pop();
 			var backdrops = $('.modal-backdrop');
 			var last_backdrop = backdrops[backdrops.length-1];
@@ -87,6 +93,8 @@ if(!window.qwx) { window.qwx = {} }
 				$(x.data('focus_in')).focus();
 			}
 			x.data('isShown', false);
+			x.data('hideInProgress', false);
+			ev.stopPropagation();
 		});
 		x.modal(opt);
 	}
@@ -423,9 +431,7 @@ window.qwx.ajax = function(opt) {
 			var upload_func = "cbupload_" + (upload_id++);
 			var type_check_regex = thisbtn.attr('filetype') ? new RegExp(thisbtn.attr('filetype')) : null;
 			var moveAway;
-			var this_is_multiple = is_multiple;
-			if(!is_multiple) is_multiple = opt
-		
+					
 			window[upload_func] = function(fileData) { 
 				if(is_multiple) { 
 					for(var i=0,l=fileData.length; i<l; i++) { 
@@ -618,6 +624,7 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 		getAfterSave: 1,
 		template : '#edit_dialog_template',
 		data_prepare_view_opt: this.data_prepare_opt,
+		called_in_list: this,
 		afterSave: function(o) { 
 			if(success_cb) {
 				success_cb.call(o);
@@ -758,8 +765,10 @@ window.qwx.list.prototype.reloadObject = function(id) {
 	});
 };
 window.qwx.list.prototype.setObject = function(obj, opt) { 
+
 	var place = document.getElementById('row-' + obj.id);
 	if(!place) place = this.place.find('[data-id=' + obj.id + ']')[0];
+
 	if(place) { 
 		var new_row = $(qwx.t(this.row_template, { o: obj, list: this }));
 		$(place).replaceWith(new_row); 
@@ -796,17 +805,25 @@ window.qwx.list.prototype.enableRowButtons = function(el, obj) {
 	if(!self.remove) { self.remove = {}; } 
 	el.find('[role=deleteButton],.deleteButton').on('click', function(e) {
 		e.stopPropagation();
-		if(confirm(self.remove.question || 'Delete object?')) { 
-			self.apiCall ('delete', [self.deleteCid || self.cid, obj.id], { message: self.remove.message ||'Deleting...' }, function() { 
-				el.addClass('deleted-row');
-				el.slideUp();
-				if(self.postDeleteRow) self.postDeleteRow(el);
-				self.place.trigger('afterDeleteRow', { el: el, list: self });
-				return true;
-			}); 	
-		}
+		self.deleteObject(el,obj);
 	});
 
+};
+window.qwx.list.prototype.deleteObject = function(row, obj) { 
+	if(!row) {
+		var r = document.getElementById('row-' + obj.id);
+		row = r ? $(r) : this.place.find('[data-id=' + obj.id + ']');
+	}
+	var self = this;
+	if(confirm(this.remove.question || 'Delete object?')) { 
+		self.apiCall ('delete', [this.deleteCid || this.cid, obj.id], { message: this.remove.message ||'Deleting...' }, function() { 
+			row.addClass('deleted-row');
+			row.slideUp();
+			if(self.postDeleteRow) self.postDeleteRow(row);
+			self.place.trigger('afterDeleteRow', { el: row, list: self });
+			return true;
+		}); 	
+	}
 };
 
 window.qwx.list.prototype.pause = function() {
@@ -1442,6 +1459,7 @@ window.qwx.editDialog = function (id, opt) {
 	var onClose           = opt.onClose;
 	var preClose          = opt.beforeClose;
 	this.save             = opt.saveObject || this.save;
+	this.called_in_list   = opt.called_in_list;
 	var self = this;
 
 	var openModal = function(obj, add_data) { 
@@ -1466,7 +1484,7 @@ window.qwx.editDialog = function (id, opt) {
 		dialog.find('input[type=radio]').each(function() {  if(this.name) { var v = obj[this.name]; if(v) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); if(name) $(this).data('widget').val(obj[name]); });
 
-		if(self.fillDialog) self.fillDialog(dialog, obj, add_data);
+		if(self.fillDialog) self.fillDialog(dialog, obj, add_data, self);
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
 		if(preClose) modal.on('hide.bs.modal', function() { preClose(self); });
@@ -1574,7 +1592,7 @@ window.qwx.editDialog = function (id, opt) {
 		self.save(form, ops, function(r) {
 			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1].obj : r.result[0].obj);
 			var modal = form.closest('.modal');
-			if(!modal.modalBox('hideInProgress')) modal.modalBox('hide');
+			if(!modal.modalBox('hideInProgress')) { modal.modalBox('hide'); }
 			window.qwx.closeMessageBox();
 
 		});
