@@ -91,7 +91,8 @@ if(!window.qwx) { window.qwx = {} }
 			if(prev) {
 				prev.on('keydown.dismiss.bs.modal',x.data('prev_keyha') ); 
 				$(x.data('focus_in')).focus();
-			}
+				$(document.body).addClass('modal-open');
+			} 
 			x.data('isShown', false);
 			x.data('hideInProgress', false);
 			ev.stopPropagation();
