@@ -121,7 +121,7 @@ if(!window.qwx) { window.qwx = {} }
 		var middle = this;
 		var width = option && option.width || '60%';
 
-		var modal = $('<div/>');
+		var modal = $('<' + (option && option.topTag || 'div') + '/>');
 		modal.addClass('modal fade').html(
 ' <div class="modal-dialog" style="width:' + width + '; max-width:' + width + ';"><div class="modal-content"><div class="modal-header">' +
 '		 <h4 class="modal-title"></h4>' +
