@@ -203,10 +203,12 @@ if(!window.qwx) { window.qwx = {} }
 			f.find('.btn-success').off('click');
 			div[0].focus();
 			f.find('.btn-default').each(function() { this.focus();});
-			showInProgress = true;
-			div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });h
+			if(!isShown) {
+				showInProgress = true;
+				div.modalBox({keyboard: close, backdrop: (close ? true: 'static') });
+			}
 			if(on_close) { 
-				div.on('hide.bs.modal', on_close);			
+				div.one('hide.bs.modal', on_close);			
 			}
 		}
 		if(closeInProgress || showInProgress) { 
