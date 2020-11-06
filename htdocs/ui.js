@@ -950,6 +950,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	var sel;
 	this.nullText = opt.nullText;
 	this.getData  = opt.getData;
+	this.disabled = opt.disabled;
 	var base = $('<div class="dropdown" data-dropdown="dropdown"/>').appendTo(place.html(''));
 	var btn  = $('<button class="btn dropdown-toggle" type="button" data-toggle="dropdown" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
 	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
@@ -975,6 +976,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		}
 	};
 	function setmenuhandlers(items) {
+		if(self.disabled) return;
 		items.on('click', function(ev) {
 			if(!$(this).hasClass('not-selectable')) {
 				self.value = val = this.getAttribute('data-id');
@@ -1662,9 +1664,11 @@ qwx.setJQWidget('qwxCheckBoxArray', 'qwx.checkBoxArray');
 /* -- date widget -- */
 window.qwx.dateWidget = function(place, opt) { 
     qwx.widget.call(this, place, opt);
+	this.disabled = opt.disabled;
     var div = this.div = $('<div class="qwx-calendar"/>').appendTo(place);
 	var inp = this.inp = $('<input/>').appendTo(div);
 	inp.addClass(opt.inputClass === undefined ? 'form-control qwx-input-date' : opt.inputClass);
+	
     div.datepicker({ 
 		inputs  : inp, 
 		format  : opt.datepickerFormat || 'dd.mm.yyyy',
@@ -1789,16 +1793,18 @@ window.qwx.fileWidget = function(place, opt) {
 	}
 	this.debug = opt.debug;
 	var self = this;
-	this.btn = $('<button class="btn btn-upload"/>').html(opt.uploadButtonText || 'Upload file').appendTo(place);
-	this.btn.on('click', function() { 
-		window.upload_callback = function() { 
-			if(self.debug) console.log('callbackargs',arguments);
-			var data = self.callbackArgs2File(arguments);
-			self.setFile(data);
-			$(self.place).trigger('change');
-		};
-		$('#upload_form input').click();
-	});
+	if(!opt.disabled) { 
+		this.btn = $('<button class="btn btn-upload"/>').html(opt.uploadButtonText || 'Upload file').appendTo(place);
+		this.btn.on('click', function() { 
+			window.upload_callback = function() { 
+				if(self.debug) console.log('callbackargs',arguments);
+				var data = self.callbackArgs2File(arguments);
+				self.setFile(data);
+				$(self.place).trigger('change');
+			};
+			$('#upload_form input').click();
+		});
+	}
 };
 
 window.qwx.fileWidget.prototype = Object.create(window.qwx.widget.prototype);
