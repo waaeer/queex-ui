@@ -1535,8 +1535,11 @@ window.qwx.editDialog = function (id, opt) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
 		var postponed_radio_validation = {}, empty_fields = [];
-		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', function() {
+
+		function validateElement() { 
 			var el   = this;
+			var $el = $(el);
+			$el.off('change.validation');
 			var name = this.getAttribute('name');
 			var type = this.getAttribute('type');
 			if(name) { 
@@ -1562,23 +1565,26 @@ window.qwx.editDialog = function (id, opt) {
 				} else if(el.getAttribute('role') == 'widget') { 
 					attr[name] = $(this).data('widget').val();
 					if(el.hasAttribute('validate-selected')) {
-						empty = !attr[name];
+						empty = !attr[name] || (typeof(attr[name])=='object' && attr[name].length==0);
 					}
 				}
 
 				if(empty!==null) 
 					if(empty) { 
-						$(el).addClass('not-filled'); has_err = true; empty_fields.push(el.title || name);
+						$el.addClass('not-filled'); empty_fields.push(el.title || name);
+						$el.on('change.validation', function() { validateElement.call(el); });
 					} else { 	
-						$(el).removeClass('not-filled');
+						$el.removeClass('not-filled');
 					}
 			}
-		});
+		}
+		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]:visible', '[nosave]', validateElement);
 		for(var name in postponed_radio_validation) { 
 			if(!attr[name]) { 
 				empty_fields.push(postponed_radio_validation[name] || name);
 			}
 		}
+
 		if(empty_fields.length>0) { 
 			window.qwx.messageBox('Ошибка', (empty_fields.length==1 ? 'Не заполнено поле ' : 'Не заполнены поля ') + empty_fields.join(', '), true, 'error');
 		}
@@ -1840,12 +1846,6 @@ qwx.setJQWidget('qwxFileWidget', 'qwx.fileWidget');
 
 
 /* -- end file widget -- */
-
-
-
-
-
-
 
 
 /* -- val() and w() for widgets ---*/
