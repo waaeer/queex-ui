@@ -458,10 +458,12 @@ window.qwx.ajax = function(opt) {
 					thisbtn.find("input[role=n]").val(fileData[0].name);
 					thisbtn.trigger('postUpload', fileData[0]);
 				}
+				faf.find('input[type=file]').val(null);
 			}
 			thisbtn.mouseover(function() {
 				moveAway = false;
 				activeBtn = thisbtn;
+				if(thisbtn.prop('disabled')) return;
 				var pos = thisbtn.offset();
 				var browser_correction = 0;
 				var base = { left: 0, top: 0 };
@@ -470,7 +472,7 @@ window.qwx.ajax = function(opt) {
 					left: pos.left - base.left + browser_correction + 'px',  top: pos.top - base.top + 'px'
 				});
 			});
-			thisbtn.mouseout(function() { moveAway = true; setTimeout(function() { if(moveAway) { moveAway=false; faf.css({left:'-555px'}); } }, 500); });
+			thisbtn.mouseout(function() { moveAway = true; if(thisbtn.prop('disabled')) return; setTimeout(function() { if(moveAway) { moveAway=false; faf.css({left:'-555px'}); } }, 500); });
 			faf.mouseover(function(){ moveAway = false;});
 			faf.mouseout( function(){ moveAway = true;  setTimeout(function() { if(moveAway) { moveAway=false; faf.css({left:'-555px'}); } }, 500); });
 		});
@@ -515,6 +517,7 @@ window.qwx.widget = function(place,opt) {
 	if(!opt) console.log('qwxWidget call without options');
 	this.place   = place;
 	this.api     = opt.api     || '/user/api';
+	this.disabled = opt.disabled;
 	if(place) {
 		place.data('widget',this);
 		place.attr('role', 'widget');
@@ -528,6 +531,9 @@ window.qwx.widget = function(place,opt) {
 			success: cb
 		});
 	}
+};
+window.qwx.widget.prototype.setDisabled = function(v) {
+	this.disabled = v;
 };
 
 window.qwx.list = function(place,opt) { 
@@ -628,6 +634,7 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 		template : '#edit_dialog_template',
 		data_prepare_view_opt: this.data_prepare_opt,
 		called_in_list: this,
+		disabled : this.disabled,
 		afterSave: function(o) { 
 			if(success_cb) {
 				success_cb.call(o);
@@ -976,8 +983,8 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		}
 	};
 	function setmenuhandlers(items) {
-		if(self.disabled) return;
 		items.on('click', function(ev) {
+			if(self.disabled) return;
 			if(!$(this).hasClass('not-selectable')) {
 				self.value = val = this.getAttribute('data-id');
 				if(self.value == '') self.value = val =  null;
@@ -1043,6 +1050,10 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 window.qwx.pseudoSelectWidget.prototype.objectVal = function() { 
 	return this.value ? this.obyid[this.value] : null;
 };
+
+
+
+
 
 +function($) { 
 	$.fn.qwxPseudoSelectWidget = function(option) { 
@@ -1465,6 +1476,7 @@ window.qwx.editDialog = function (id, opt) {
 	var preClose          = opt.beforeClose;
 	this.save             = opt.saveObject || this.save;
 	this.called_in_list   = opt.called_in_list;
+	this.disabled         = opt.disabled;
 	var self = this;
 
 	var openModal = function(obj, add_data) { 
@@ -1473,7 +1485,7 @@ window.qwx.editDialog = function (id, opt) {
 		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data});
 		if(!modal.find('.modal-dialog')[0]) { 
 			modal = modal.makeModal(_.extend({okButtonClass: opt.saveButtonClass, 
-				okButton:'<span class="fa fa-download"></span>&nbsp;Сохранить', 
+				okButton: (self.disabled ? null : '<span class="fa fa-download"></span>&nbsp;Сохранить'), 
 				title: opt.title, 
 				width: opt.width }, dialogOpt ));
 		}
@@ -1483,13 +1495,16 @@ window.qwx.editDialog = function (id, opt) {
 		self.modal = modal;
 		modal.modalBox({backdrop: 'static', keyboard: false});
 		
-		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; if(n) this.value = obj[n] ? obj[n] : ''; });
-		dialog.find('select').each(function() { if(this.name) { var v = obj[this.name];  $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
-		dialog.find('input[type=checkbox]').each(function() { if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
-		dialog.find('input[type=radio]').each(function() {  if(this.name) { var v = obj[this.name]; if(v) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
+		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.disabled = self.disabled; if(n) this.value = obj[n] ? obj[n] : ''; });
+		dialog.find('select').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
+		dialog.find('input[type=checkbox]').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
+		dialog.find('input[type=radio]').each(function() {  this.disabled = self.disabled;  if(this.name) { var v = obj[this.name]; if(v) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); if(name) $(this).data('widget').val(obj[name]); });
 
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data, self);
+
+		if(self.disabled) dialog.find('[role=widget]').each(function() { $(this).data('widget').setDisabled(true); });
+
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
 		if(preClose) modal.on('hide.bs.modal', function() { preClose(self); });
@@ -1597,7 +1612,7 @@ window.qwx.editDialog = function (id, opt) {
 		];
 			
 		if (self.collectData) { 
-			try { self.collectData(form, attr, ops, btn); } catch(err) { qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
+			try { self.collectData(form, attr, ops, btn); } catch(err) { console.log('collectData caused error', err.lineNumber, err.fileName, err.message); qwx.messageBox('Ошибка', err, true, 'error'); return false; } 
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.save(form, ops, function(r) {
