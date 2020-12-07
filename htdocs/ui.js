@@ -614,7 +614,7 @@ window.qwx.list = function(place,opt) {
 				if(id=='undefined') id=undefined;
 				this.openEditDialog(id);
 			}
-		}  
+		}
 		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 	}
 }
@@ -686,7 +686,6 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 
     if(list.onBeforeDisplayList) list.onBeforeDisplayList(list);
 	list.place.trigger('beforeDisplayList', { page: page, filter: filter });
-
 	this.getData(page, filter,function(r) { 
 		if(list.preDisplayList && !list.preDisplayList(r)) return; 
 		list.place.trigger('preDisplayList', { r: r })
@@ -1471,6 +1470,7 @@ window.qwx.editDialog = function (id, opt) {
 	this.validator        = opt.validator;
     this.apiMethod        = opt.apiMethod      || 'get';
 	this.saveCid		  = opt.saveCid        || this.cid;
+	this.deleteButton     = opt.deleteButton;
 	var preEditCalls      = opt.preEditCalls;
 	var onClose           = opt.onClose;
 	var preClose          = opt.beforeClose;
@@ -1481,11 +1481,16 @@ window.qwx.editDialog = function (id, opt) {
 
 	var openModal = function(obj, add_data) { 
 		var dialogOpt = opt.dialogOpt || {};
-		if(dialogOpt.constructor.name == 'Function') dialogOpt = dialogOpt(obj);
+		if(dialogOpt.constructor.name == 'Function') dialogOpt = dialogOpt.call(self, obj);
 		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data});
+		var is_new = !obj || obj.__is_new;
 		if(!modal.find('.modal-dialog')[0]) { 
 			modal = modal.makeModal(_.extend({okButtonClass: opt.saveButtonClass, 
-				okButton: (self.disabled ? null : '<span class="fa fa-download"></span>&nbsp;Сохранить'), 
+				okButton:  (self.disabled || (self.deleteButton && !is_new) ? null : '<span class="fa fa-download"></span>&nbsp;' + (opt.saveButtonLabel || 'Сохранить')), 
+				okButtons: (self.disabled || !self.deleteButton || is_new   ? null : [ 
+					 { label: '<span class="fa fa-download"></span>&nbsp;' + (opt.saveButtonLabel || 'Сохранить'), btnClass: opt.saveButtonClass},
+					 { label: '<span class="fa fa-trash"></span>&nbsp;' + (self.deleteButton.label || 'Удалить'), btnClass: 'btn btn-secondary btn-delete' }
+				]),
 				title: opt.title, 
 				width: opt.width }, dialogOpt ));
 		}
@@ -1511,6 +1516,10 @@ window.qwx.editDialog = function (id, opt) {
 		modal.one('hidden.bs.modal', function() { modal.remove(); if(onClose) onClose(); });
 		modal.find('.btn-save,[role=saveButton]').on('click', function() {
 			self.saveDialog(this );
+		});
+		if(!self.disabled && self.deleteButton) modal.find('.btn-delete').on('click', function() { 
+			self.called_in_list.deleteObject(null, obj); 
+			self.close();
 		});
 	}
 
@@ -1697,7 +1706,8 @@ window.qwx.dateWidget = function(place, opt) {
 		daysOfWeekHighlighted: opt.daysOfWeekHighlighted || [0,6],
 		todayHighlight: true
 	});
-
+	var self = this;
+	inp.on('change', function(ev) { if(self.ignoreChange) ev.stopPropagation(); });
     div.datepicker().on('changeDate', function(e,m) { 
         inp.datepicker('hide');
     });
@@ -1708,7 +1718,9 @@ window.qwx.dateWidget.prototype.val = function(v) {
     if (arguments.length == 0 ) {
         return qwx.date2iso(this.inp.datepicker('getDate'));
     } else {
+		this.ignoreChange = true;
         this.inp.datepicker('setDate', (v instanceof Date) ? v : qwx.iso2date(v) );
+		this.ignoreChange = false;
         return this;
     }
 };
@@ -1739,8 +1751,8 @@ window.qwx.iso2time = function(isodate) {
 /*----- bicalendar -------*/
 window.qwx.biCalendarWidget = function(place, opt) { 
 	qwx.widget.call(this, place, opt);
-	place.html('<div class="qwx-bicalendar">'+ (opt.wrapOne ? opt.wrapOne[0] : '') + window.qwx.tr('с')  + ' <span><input class="form-control qwx-input-date"></span> ' + (opt.wrapOne ? opt.wrapOne[1] : '')
-		                                     + (opt.wrapOne ? opt.wrapOne[0] : '') + window.qwx.tr('по') + ' <span><input class="form-control qwx-input-date"></span>' + (opt.wrapOne ? opt.wrapOne[1] : '')
+	place.html('<div class="qwx-bicalendar">'+ (opt.wrapOne ? opt.wrapOne[0] : '') + '<span class="bicalendar-label">' + window.qwx.tr('с')  + '</span><span><input class="form-control qwx-input-date"></span> ' + (opt.wrapOne ? opt.wrapOne[1] : '')
+		                                     + (opt.wrapOne ? opt.wrapOne[0] : '') + '<span class="bicalendar-label">' + window.qwx.tr('по') + '</span><span><input class="form-control qwx-input-date"></span>' + (opt.wrapOne ? opt.wrapOne[1] : '')
 		     + '</div>');
 	var cal1 = $(place.find('input')[0]);
 	var cal2 = $(place.find('input')[1]);
