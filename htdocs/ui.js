@@ -564,6 +564,8 @@ window.qwx.list = function(place,opt) {
 	this.deleteCid      = opt.deleteCid; //  if main cid is e.g. a view 
 
 	this.defaultFilter = {};
+	_.extend(this.query, this.data_prepare_opt);
+
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
 	}
@@ -577,10 +579,11 @@ window.qwx.list = function(place,opt) {
 		   var state = ev.originalEvent.state;
 		   if(state==null) state = qwx.initialArgs.data;
 		   list.displayList(state[page_arg], list.json2filter(state[filter_arg]), true );
-		   if(list.editDialog && edit_arg && state[edit_arg]) 
+		   if(list.editDialog && edit_arg && state[edit_arg]) {
 				var id=state[edit_arg];
 				if(id=='undefined') id=undefined;
 				list.openEditDialog(id);
+			}
 	   });
     }
 	
@@ -1484,6 +1487,8 @@ window.qwx.editDialog = function (id, opt) {
 		if(dialogOpt.constructor.name == 'Function') dialogOpt = dialogOpt.call(self, obj);
 		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data});
 		var is_new = !obj || obj.__is_new;
+		if(_.isFunction(self.disabled))	self.disabled = self.disabled(obj);
+
 		if(!modal.find('.modal-dialog')[0]) { 
 			modal = modal.makeModal(_.extend({okButtonClass: opt.saveButtonClass, 
 				okButton:  (self.disabled || (self.deleteButton && !is_new) ? null : '<span class="fa fa-download"></span>&nbsp;' + (opt.saveButtonLabel || 'Сохранить')), 
