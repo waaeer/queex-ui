@@ -569,8 +569,8 @@ window.qwx.list = function(place,opt) {
 	if(opt.filters) { 
 		for(var i=0,l=opt.filters.length;i<l;i++) this.registerFilter.apply(this, opt.filters[i]);
 	}
-	var page_arg   = this.page_arg		= opt.page_arg    ? opt.page_arg : 'page';
-	var filter_arg = this.filter_arg	= opt.filter_arg  ? opt.filter_arg : 'F';	
+	var page_arg   = this.page_arg		= opt.page_arg   !==undefined ? opt.page_arg   : 'page';
+	var filter_arg = this.filter_arg	= opt.filter_arg !==undefined ? opt.filter_arg : 'F';	
 	var edit_arg   = this.edit_arg	 	= opt.edit_arg; // if not defined, editing does not change url
 
 	var list = this;
@@ -1508,7 +1508,7 @@ window.qwx.editDialog = function (id, opt) {
 		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.disabled = self.disabled; if(n) this.value = obj[n] ? obj[n] : ''; });
 		dialog.find('select').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
 		dialog.find('input[type=checkbox]').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
-		dialog.find('input[type=radio]').each(function() {  this.disabled = self.disabled;  if(this.name) { var v = obj[this.name]; if(v) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
+		dialog.find('input[type=radio]').each(function() {  this.disabled = self.disabled;  if(this.name) { var v = obj[this.name]; if(v!=undefined) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
 		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); if(name) $(this).data('widget').val(obj[name]); });
 
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data, self);
@@ -1523,7 +1523,7 @@ window.qwx.editDialog = function (id, opt) {
 			self.saveDialog(this );
 		});
 		if(!self.disabled && self.deleteButton) modal.find('.btn-delete').on('click', function() { 
-			self.called_in_list.deleteObject(null, obj); 
+			if(self.called_in_list) self.called_in_list.deleteObject(null, obj); 
 			self.close();
 		});
 	}
