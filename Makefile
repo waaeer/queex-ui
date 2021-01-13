@@ -103,6 +103,7 @@ install_jstools:
 #	(cd /tmp && rm -rf Bootstrap-Image-Gallery && git clone https://github.com/blueimp/Bootstrap-Image-Gallery.git && cd Bootstrap-Image-Gallery && cp js/bootstrap-image-gallery.min.js css/bootstrap-image-gallery.min.css  /tmp/jstools-qui/)
 	
 	borschik --comments=no --input=/tmp/jstools-qui/json2.js --output=/tmp/jstools-qui/json2.min.js
+	wget -c -O /tmp/jstools-qui/bootstrap-autocomplete.min.js https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js
 	(cd /tmp/jstools-qui && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
 	(rm -rf /tmp/jstools-qui)
 
