@@ -760,7 +760,7 @@ window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, d
 		filter_fld.on('change', setter);
 		this.filterSetBack[fld] = function() { 
 			var val = list.filter[fld]; 
-			if(list.filter.length==0 && default_value !== undefined) val=list.filter[fld]=default_value;
+			if((list.filter.length==0 || val===undefined) && default_value !== undefined) val=list.filter[fld]=default_value;
 			filter_fld.val(val); 
 		} ;	
 	}
