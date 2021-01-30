@@ -961,7 +961,8 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.getData  = opt.getData;
 	this.disabled = opt.disabled;
 	var base = $('<div class="dropdown" data-dropdown="dropdown"/>').appendTo(place.html(''));
-	var btn  = $('<button class="btn dropdown-toggle" type="button" data-toggle="dropdown" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
+	var btn  = $('<button class="btn dropdown-toggle" type="button" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
+	if(!this.disabled) btn.attr('data-toggle', 'dropdown');  
 	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
 	$('<span class="caret"/>').appendTo(btn);
 	var menu = $('<ul class="dropdown-menu pseudo-select"/>').appendTo(base);
