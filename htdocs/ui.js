@@ -347,6 +347,11 @@ if(!window.qwx) { window.qwx = {} }
     		}, speed || 2000, 'swing', complete);
 		}
 	}
+	var leaving_window = false;
+	window.qwx.leaving = function() { return leaving_window; }
+	$(function() {
+		$(window).on('unload', function() { leaving_window = true; });
+	});
 }();
 
 function formatSize(size) { 
@@ -406,6 +411,7 @@ window.qwx.ajax = function(opt) {
 		}, 
 		error: function(r) { 
 			qwx.closeMessageBox();
+			if(qwx.leaving()) { return; }
 			if(opt.error) { 
 				opt.error(r);
 			} else if(window.ajaxErrorHandler) { 
