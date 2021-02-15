@@ -1813,6 +1813,28 @@ window.qwx.biCalendarWidget.prototype.val = function(v) {
 		return this;
 	}
 };
+window.qwx.biCalendarWidget.prototype.duration_md = function() {
+	var v1 = this.cal1.datepicker('getDate');
+	var v2 = this.cal2.datepicker('getDate');
+	if(v1 && v2) {
+		var sign = v1 > v2 ? '-' : '';
+		if(!v1 || !v2) { fld_dur.html(''); return; }
+		if(sign=='-') { var v3 = v1; v1 = v2; v2 = v3; }
+		var dy = v2.getYear() - v1.getYear();
+        var dm = v2.getMonth()- v1.getMonth();
+		var dd = v2.getDate() - v1.getDate();
+		dm += 12*dy;
+		if(dd < 0) {
+			dm --; dd+= new Date(v2.getYear(),v2.getMonth(),0).getDate(); //days in prev month?
+		}
+		return [sign, dm, dd];
+	} else { 
+		return undefined;
+	}
+};
+
+
+
 /*------------------------------------------------------------------------------------------------------------------*/
 
 qwx.setJQWidget('qwxDateWidget', 'qwx.dateWidget');
