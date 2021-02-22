@@ -113,23 +113,18 @@
 			*/
 			if (clientInfo.events.length) {
 				$.ajax({
-					'type'		: 'POST',
-					'global'	: false,
-					'dataType'	: 'json',
-					'url'		: opts.path || '/errtrack',
-					'data'		: {
-//						'cookie'	: JSON.stringify(qwx.u.getCookie()),
+					'type'		  : 'POST',
+					'global'	  : false,
+					'contentType' : 'application/json',
+					'url'		  : opts.path || '/errtrack',
+					'data'		  : JSON.stringify({
 						'browser'	: root.navigator.userAgent,
-						'events'	: JSON.stringify(clientInfo.events, null, 4)
-					}
-				})
-				.done(function(data){
-					if (data.ok) {
-						errtrack._renew(clientInfo.events);
-					}
+						'events'	: clientInfo.events
+					})
 				})
 				.always(function () {
 					clientInfo.timer = setTimeout(notifier, interval);
+					errtrack._renew(clientInfo.events);
 				});
 			} else {
 				clientInfo.timer = setTimeout(notifier, interval);
