@@ -18,7 +18,7 @@ if(!window.qwx) { window.qwx = {} }
 	                return method[option].apply(this,arguments);
 	            } else { 
 	                console.log('Unknown method ' + option + ' in ' + jqname);
-	            }   
+	            }
 	        }
 	        return this;
 	    };
@@ -610,6 +610,7 @@ window.qwx.list = function(place,opt) {
 				if($clicked.hasClass('dropdown-toggle') || clicked.tagName == 'A' || $clicked.closest('a').length>0 ) return;
 				html.toggleClass('selected');
 				list.place.trigger('selectionChange', html, obj);
+				ev.stopPropagation();
 			});
 		};
 	}
