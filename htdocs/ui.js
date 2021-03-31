@@ -76,12 +76,12 @@ if(!window.qwx) { window.qwx = {} }
 			x.data('isShown', true);
 			ev.stopPropagation();
 		});
-		x.one('hide.bs.modal', function(ev) {
+		x.on('hide.bs.modal', function(ev) {
 			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			x.data('hideInProgress', true);
 			ev.stopPropagation();
 		});
-		x.one('hidden.bs.modal', function(ev) { 
+		x.on('hidden.bs.modal', function(ev) { 
 			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			modalStack.pop();
 			var backdrops = $('.modal-backdrop');
@@ -1525,8 +1525,8 @@ window.qwx.editDialog = function (id, opt) {
 
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
-		if(preClose) modal.on('hide.bs.modal', function() { preClose(self); });
-		modal.one('hidden.bs.modal', function() { modal.remove(); if(onClose) onClose(); });
+		if(preClose) modal.on('hide.bs.modal', function(ev) { if(ev.target == ev.currentTarget) preClose(self, ev); });
+		modal.one('hidden.bs.modal', function(ev) { modal.remove(); if(onClose) onClose(); });
 		modal.find('.btn-save,[role=saveButton]').on('click', function() {
 			self.saveDialog(this );
 		});
