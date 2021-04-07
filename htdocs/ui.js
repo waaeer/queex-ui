@@ -1493,7 +1493,7 @@ window.qwx.editDialog = function (id, opt) {
 	var openModal = function(obj, add_data) { 
 		var dialogOpt = opt.dialogOpt || {};
 		if(dialogOpt.constructor.name == 'Function') dialogOpt = dialogOpt.call(self, obj);
-		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data});
+		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data, dialog: self});
 		var is_new = !obj || obj.__is_new;
 		if(_.isFunction(self.disabled))	self.disabled = self.disabled(obj);
 
@@ -1615,7 +1615,7 @@ window.qwx.editDialog = function (id, opt) {
 					}
 			}
 		}
-		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]:visible', '[nosave]', validateElement);
+		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', validateElement);
 		for(var name in postponed_radio_validation) { 
 			if(!attr[name]) { 
 				empty_fields.push(postponed_radio_validation[name] || name);
