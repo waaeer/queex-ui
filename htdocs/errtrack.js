@@ -31,8 +31,7 @@
 	root.qwx.errtrack = errtrack;
 
 	root.beforeunload_on = false;
-/*	root.on('beforeunload', function() { root.beforeunload_on = true; } );
-*/
+	$(document).on('beforeunload', function() { root.beforeunload_on = true; } );
 	
 	errtrack.pushEvent = function(type, data) {
 		if(! root.beforeunload_on ) {
@@ -65,13 +64,15 @@
 	// store onerror into clientInfo.events
 	errtrack._bind_window_events = function() {
 		if (typeof(root.onerror) != "undefined") {
-			root.onerror = function (msg, url, line) {
+			root.onerror = function (msg, url, line, colno, error) {
 				if (url && url.indexOf('chrome://') != 0) {
 					errtrack.pushEvent('error', {
 						'message'	: msg,
 						'url'		: url,
 						'doc'		: root.location.toString(),
-						'line'		: line
+						'line'		: line,
+						'col'       : colno,
+						'stack'     : (error ? error.stack : null)
 					});
 				}
 			};
