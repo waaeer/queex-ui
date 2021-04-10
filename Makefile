@@ -78,7 +78,7 @@ install_bootstrap4:
 	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QLIB)/j/bootstrap4 && $(SUDO) chown :devel $(QLIB)/j/bootstrap4; fi )
 	( rm -rf /tmp/bootstrap-$(BOOTSTRAP4)-dist* /tmp/dist)
 	( mkdir /tmp/bootstrap-$(BOOTSTRAP4)-dist )
-	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP4)/bootstrap-$(BOOTSTRAP4)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip -d /tmp/bootstrap-$(BOOTSTRAP4)-dist && cd /tmp/bootstrap-$(BOOTSTRAP4)-dist && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/bootstrap4/{} \; )
+	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP4)/bootstrap-$(BOOTSTRAP4)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip -d /tmp/bootstrap-$(BOOTSTRAP4)-dist && cd /tmp/bootstrap-$(BOOTSTRAP4)-dist/bootstrap-$(BOOTSTRAP4)-dist && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/bootstrap4/{} \; )
 	( rm -rf /tmp/bootstrap-$(BOOTSTRAP4)-dist* )
 
 install_popper:
