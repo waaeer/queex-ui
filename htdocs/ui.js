@@ -29,9 +29,11 @@ if(!window.qwx) { window.qwx = {} }
 	function modalBox(x,opt) { 
 		var level;
 		x.one('show.bs.modal', function(ev) { 
-			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
+			if(ev.target != ev.currentTarget) return; // filter wild events from child elements (bug?)
 			level = modalStack.length;
 			modalStack.push(x);
+			x.data('hidden', false);
+
 			this.style.zIndex = zbase + 10 * level;
 			var backdrops = $('.modal-backdrop');
 			// raise previous backdrop; on "shown" return it back:
@@ -42,7 +44,7 @@ if(!window.qwx) { window.qwx = {} }
 			ev.stopPropagation();
 		});
 		x.one('shown.bs.modal', function(ev) { 
-			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
+			if(ev.target != ev.currentTarget) return; // filter wild events from child elements (bug?)
 			var backdrops = $('.modal-backdrop');
 			var prev_backdrop = backdrops[level];
 			if(prev_backdrop) { 
@@ -83,6 +85,8 @@ if(!window.qwx) { window.qwx = {} }
 		});
 		x.on('hidden.bs.modal', function(ev) { 
 			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
+			if(x.data('hidden')) return;
+			x.data('hidden', true);
 			modalStack.pop();
 			var backdrops = $('.modal-backdrop');
 			var last_backdrop = backdrops[backdrops.length-1];
@@ -645,13 +649,13 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 		data_prepare_view_opt: this.data_prepare_opt,
 		called_in_list: this,
 		disabled : this.disabled,
-		afterSave: function(o) { 
+		afterSave: function(o, id) { 
 			if(success_cb) {
 				success_cb.call(o);
 			} else { 
 				self.setObject(o,{ifnot: self.editDialog.actionAfterSaveNew || 'reload'});
 			}
-			self.place.trigger('afterSave', [self, o]);
+			self.place.trigger('afterSave', [self, o, id]);
 		},
 		onClose: function() {
 			if(!self.ignoreState && self.edit_arg) qwx.replaceState("edit " ,  null, [ self.edit_arg, null]);
@@ -859,7 +863,7 @@ window.qwx.list.prototype.resume = function() {
 		var list = this.data('widget');
 		if(option == 'exists') { 
 			return list ? true : false; 
-		} else if(option == 'widget') { 
+		} else if(option == 'widget' || option =='w') { 
 			return list ? list : null;
 		} 
 		if(!list) { console.log("No qwxlist associated with", this); }
@@ -1504,7 +1508,7 @@ window.qwx.editDialog = function (id, opt) {
 					 { label: '<span class="fa fa-download"></span>&nbsp;' + (opt.saveButtonLabel || 'Сохранить'), btnClass: opt.saveButtonClass},
 					 { label: '<span class="fa fa-trash"></span>&nbsp;' + (self.deleteButton.label || 'Удалить'), btnClass: 'btn btn-secondary btn-delete' }
 				]),
-				title: opt.title, 
+				title: _.isFunction(opt.title) ? opt.title(obj) : opt.title, 
 				width: opt.width }, dialogOpt ));
 		}
 
@@ -1521,7 +1525,9 @@ window.qwx.editDialog = function (id, opt) {
 
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data, self);
 
-		if(self.disabled) dialog.find('[role=widget]').each(function() { $(this).data('widget').setDisabled(true); });
+		if(self.disabled) dialog.find('[role=widget]').each(function() { 
+			$(this).data('widget').setDisabled(true);
+		});
 
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
@@ -1572,7 +1578,6 @@ window.qwx.editDialog = function (id, opt) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
 		var postponed_radio_validation = {}, empty_fields = [];
-
 		function validateElement() { 
 			var el   = this;
 			var $el = $(el);
@@ -1638,7 +1643,7 @@ window.qwx.editDialog = function (id, opt) {
 		}
 		if (self.getAfterSave && self.getAfterSave == 'final') ops.push([this.apiMethod, self.cid, id, self.data_prepare_view_opt ]);
 		self.save(form, ops, function(r) {
-			self.afterSave(self.getAfterSave == 'final' ? r.result[r.result.length-1].obj : r.result[0].obj);
+			self.afterSave( (self.getAfterSave == 'final' ? r.result[r.result.length-1].obj : r.result[0].obj), id );
 			var modal = form.closest('.modal');
 			if(!modal.modalBox('hideInProgress')) { modal.modalBox('hide'); }
 			window.qwx.closeMessageBox();
