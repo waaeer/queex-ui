@@ -527,6 +527,7 @@ window.qwx.widget = function(place,opt) {
 	if(!opt) console.log('qwxWidget call without options');
 	this.place   = place;
 	this.api     = opt.api     || '/user/api';
+	this.data    = opt.data; // simply load data for custom methods and templates	
 	this.disabled = opt.disabled;
 	if(place) {
 		place.data('widget',this);
@@ -570,7 +571,6 @@ window.qwx.list = function(place,opt) {
 	this.getList        = opt.getList; // function for use instead of default api
 	this.ignoreState    = opt.ignoreState; // disable pushState/onPopState on list navigation
 	this.ignoreArgs     = opt.ignoreArgs;  // disable taking initial filter and pages from page args
-	this.data           = opt.data; // simply load data for custom methods and templates	
 	this.deleteCid      = opt.deleteCid; //  if main cid is e.g. a view 
 
 	this.defaultFilter = {};
@@ -622,6 +622,7 @@ window.qwx.list = function(place,opt) {
 		this.displayList(1, this.defaultFilter, true);	
 	} else { 
 		var args = qwx.getArgs();
+		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 		if(this.editDialog && edit_arg ) { 
 			var id=args.arg(edit_arg);
 			if(id) { 
@@ -629,7 +630,6 @@ window.qwx.list = function(place,opt) {
 				this.openEditDialog(id);
 			}
 		}
-		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
 	}
 }
 
