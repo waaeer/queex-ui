@@ -137,7 +137,7 @@ if(!window.qwx) { window.qwx = {} }
    : ''
  )
 ) + (!option || ! option.topClose ?
-'        <button type="button" class="btn btn-default" data-dismiss="modal">' + (option.closeButton || 'Закрыть') + '</button>' : ''
+'        <button type="button" class="btn btn-default" data-dismiss="modal">' + (option.closeButton || (qwx.messageBoxOpt ? qwx.messageBoxOpt.closeLabel : null) || 'Закрыть') + '</button>' : ''
 )+
 '      </div></div></div></div>'
 		).appendTo($('body')).find('.modal-body').append(middle);
@@ -152,13 +152,13 @@ if(!window.qwx) { window.qwx = {} }
 +function() { 
 	var messageBoxElement;
 	var opQueue = [], closeInProgress = false, showInProgress = false, isShown = false;
-	function init() { 
+	function init(opt) { 
 		if(!messageBoxElement) {
 			messageBoxElement = $('<div/>').addClass('modal fade messageBox').html(
 ' <div class="modal-dialog" style="width:300px;"><div class="modal-content"><div class="modal-header">' + 
 '		 <h4 class="modal-title"></h4></div><div class="modal-body"> </div><div class="modal-footer">' + 
-'		 <button type="button" style="display:none; float: left;" class="btn btn-success">Подтвердить</button>' + 
-'        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>' +
+'		 <button type="button" style="display:none; float: left;" class="btn btn-success">' + (opt.confirmLabel || 'Подтвердить') + '</button>' + 
+'        <button type="button" class="btn btn-default" data-dismiss="modal">' + (opt.closeLabel || 'Закрыть') + '</button>' +
 '      </div></div></div></div>'
 			).appendTo($('body'));
 			messageBoxElement.on('hidden.bs.modal', function(ev) { 
@@ -187,7 +187,7 @@ if(!window.qwx) { window.qwx = {} }
 		return messageBoxElement;
 	};		
 	window.qwx.messageBox = function(title,text,close,style_opt, on_close) {
-		var div = init();
+		var div = init(window.qwx.messageBoxOpt || {});
 		function func() { 
 			var h = div.find('.modal-header'), f=div.find('.modal-footer'), b=div.find('.modal-body');
 			if(title) {  h.show().find('.modal-title').html(title); } 
