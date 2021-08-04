@@ -532,6 +532,7 @@ window.qwx.widget = function(place,opt) {
 	if(place) {
 		place.data('widget',this);
 		place.attr('role', 'widget');
+		if(!this.disabled && place.attr('disabled')) this.disabled = true;
 	}
 	var self = this;
 	this.apiCall = opt.apiCall || function(method, args, block, cb) { 
@@ -1498,7 +1499,7 @@ window.qwx.editDialog = function (id, opt) {
 		var dialogOpt = opt.dialogOpt || {};
 		if(dialogOpt.constructor.name == 'Function') dialogOpt = dialogOpt.call(self, obj);
 		var modal = qwx.$t(self.template, {opt:self.templateOpt, o: obj, add_data: add_data, dialog: self});
-		var is_new = !obj || obj.__is_new;
+		var is_new = self.is_new = !obj || obj.__is_new;
 		if(_.isFunction(self.disabled))	self.disabled = self.disabled(obj);
 
 		if(!modal.find('.modal-dialog')[0]) { 
