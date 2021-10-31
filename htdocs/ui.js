@@ -1066,9 +1066,10 @@ window.qwx.pseudoSelectWidget.prototype.objectVal = function() {
 	return this.value ? this.obyid[this.value] : null;
 };
 
-
-
-
+window.qwx.pseudoSelectWidget.prototype.reload = function() { 
+	this.val(this.val());
+	return this.fillMenu();
+}
 
 +function($) { 
 	$.fn.qwxPseudoSelectWidget = function(option) { 
