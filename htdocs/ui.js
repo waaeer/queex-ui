@@ -100,6 +100,7 @@ if(!window.qwx) { window.qwx = {} }
 			x.data('isShown', false);
 			x.data('hideInProgress', false);
 			ev.stopPropagation();
+			if(opt.remove) { x.remove(); } 
 		});
 		x.modal(opt);
 	}
