@@ -41,8 +41,8 @@ air: ai
 ## sudo npm i -g grunt-cli
 ## npm i 
 ######
-# needs nodejs and borshick to minify some js
-# npm install borschik -g
+# needs nodejs and uglifyjs to minify some js
+# npm install uglify-js -g
 
 
 install_tinymce4:
@@ -61,7 +61,7 @@ install_tinymce5:
 	## add codesample alternative plugin
 	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
 	( cd /tmp && git clone https://github.com/waaeer/TinyMCE5-Codesample.git )
-	( cd /tmp/TinyMCE5-Codesample && borschik -i codesample/plugin.js -o codesample/plugin.min.js )
+	( cd /tmp/TinyMCE5-Codesample && /usr/local/bin/uglifyjs --compress --mangle -- codesample/plugin.js > codesample/plugin.min.js )
 	( cd /tmp/TinyMCE5-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce5-plugins/{} \; )
 	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
 
@@ -103,7 +103,7 @@ install_jstools:
 	(cd /tmp && rm -rf Gallery jstools-qui/blueimp-gallery/ && mkdir jstools-qui/blueimp-gallery/ && git clone https://github.com/blueimp/Gallery.git && cd Gallery && cp -r img css js /tmp/jstools-qui/blueimp-gallery/ )
 #	(cd /tmp && rm -rf Bootstrap-Image-Gallery && git clone https://github.com/blueimp/Bootstrap-Image-Gallery.git && cd Bootstrap-Image-Gallery && cp js/bootstrap-image-gallery.min.js css/bootstrap-image-gallery.min.css  /tmp/jstools-qui/)
 	
-	borschik --comments=no --input=/tmp/jstools-qui/json2.js --output=/tmp/jstools-qui/json2.min.js
+	/usr/local/bin/uglifyjs --compress --mangle -- /tmp/jstools-qui/json2.js >  /tmp/jstools-qui/json2.min.js
 	wget -c -O /tmp/jstools-qui/bootstrap-autocomplete.min.js https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js
 	(cd /tmp/jstools-qui && find -L . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/{} \; )
 	(rm -rf /tmp/jstools-qui)
