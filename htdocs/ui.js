@@ -1520,7 +1520,7 @@ window.qwx.editDialog = function (id, opt) {
 		self.modal = modal;
 		modal.modalBox({backdrop: 'static', keyboard: false});
 		
-		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.disabled = self.disabled; if(n) this.value = obj[n] ? obj[n] : ''; });
+		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.disabled = self.disabled; if(n) this.value = obj[n]!=undefined ? obj[n] : ''; });
 		dialog.find('select').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
 		dialog.find('input[type=checkbox]').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
 		dialog.find('input[type=radio]').each(function() {  this.disabled = self.disabled;  if(this.name) { var v = obj[this.name]; if(v!=undefined) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
