@@ -386,6 +386,7 @@ window.qwx.ajax = function(opt) {
 		contentType: 'application/json',
 		data: JSON.stringify(opt.data),
 		type: 'POST',
+		async: ! qwx.__synchronous_ajax,
 		success: function(r) { 
 			if(r.error) {
 				// toDo: must-authenticate
