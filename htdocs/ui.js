@@ -1053,6 +1053,7 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 				}
 			});
 			if(!is_set || v===null) btn.find('span.selected-option-text').html(self.nullText);
+			self.place.trigger('setval');
 		};
 		if(this.getData && !this.gotData) { 
 			this.fillMenu(v, set_value);
@@ -1426,7 +1427,7 @@ window.qwx.fillSelect = function(el,items, value, label, postProcessOption) {
     }
 };
 
-window.qwx.imageWidget = function(place, opt) { 
+window.qwx.imageWidget = function(place, opt) { -
 	qwx.widget.call(this, place, opt);
 	var name      = this.name      = opt.name;
 	var uploadURI = this.uploadURI = opt.uploadURI;
