@@ -990,7 +990,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		if(opt.getData) {
 			opt.getData(function(data) {
 				self.gotData = true;
-				menu.html(qwx.t(opt.template, { list: data , el: self}));
+				menu.html(qwx.t(opt.template, { list: data , el: self, opt: opt.templateOpt}));
 				for(var i=0;i<data.length;i++) self.obyid[data[i].id] = data[i];
 				setmenuhandlers(menu.find('li'));
 				select_current(val);
