@@ -255,6 +255,7 @@ if(!window.qwx) { window.qwx = {} }
 	};
 	window.qwxTemplateCache = {};
 	window.qwx.t = function(template,vars) { 
+		if(_.isFunction(template)) return template(vars);
 		if(template.substr(0,1) == '#') { 
 			var id = template.substr(1);
 			var t = window.qwxTemplateCache[id];

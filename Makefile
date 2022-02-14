@@ -16,6 +16,7 @@ SPRINTF_JS=1.1.1
 SNAP=0.5.1
 VIEWERJS=0.5.8
 FONTAWESOME=4.7.0
+FONTAWESOME_MAJOR=4
 JSTREE=3.3.8
 
 all:
@@ -93,7 +94,7 @@ install_jstools:
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/jquery.min.js http://code.jquery.com/jquery-$(JQUERY).min.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/underscore-min.js http://underscorejs.org/underscore-umd-min.js )
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/json2.js	https://raw.github.com/douglascrockford/JSON-js/master/json2.js)
-	(wget --no-check-certificate -c -O /tmp/fa.zip  https://fontawesome.com/v$(FONTAWESOME)/assets/font-awesome-$(FONTAWESOME).zip  && unzip -o -d /tmp/jstools-qui /tmp/fa.zip && cd /tmp/jstools-qui && rm -fr font-awesome && ln -s font-awesome-$(FONTAWESOME) font-awesome)
+	(wget --no-check-certificate -c -O /tmp/fa.zip  https://fontawesome.com/v$(FONTAWESOME_MAJOR)/assets/font-awesome-$(FONTAWESOME).zip  && unzip -o -d /tmp/jstools-qui /tmp/fa.zip && cd /tmp/jstools-qui && rm -fr font-awesome && ln -s font-awesome-$(FONTAWESOME) font-awesome)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js  https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.min.js)
 #	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.js      https://raw.githubusercontent.com/twitter/typeahead.js/master/dist/typeahead.jquery.js)
 	(wget --no-check-certificate -c -O /tmp/jstools-qui/typeahead.jquery.min.js    https://raw.githubusercontent.com/waaeer/typeahead.js/wao/dist/typeahead.jquery.min.js)
