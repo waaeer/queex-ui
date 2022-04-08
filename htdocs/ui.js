@@ -33,27 +33,25 @@ if(!window.qwx) { window.qwx = {} }
 			level = modalStack.length;
 			modalStack.push(x);
 			x.data('hidden', false);
-
 			this.style.zIndex = zbase + 10 * level;
-			var backdrops = $('.modal-backdrop');
-			// raise previous backdrop; on "shown" return it back:
-			var last_backdrop = backdrops[level];
-			if(last_backdrop) { 
-				last_backdrop.style.zIndex = zbase + 5 + 10 * level;
-			}
 			ev.stopPropagation();
 		});
 		x.one('shown.bs.modal', function(ev) { 
 			if(ev.target != ev.currentTarget) return; // filter wild events from child elements (bug?)
-			var backdrops = $('.modal-backdrop');
-			var prev_backdrop = backdrops[level];
-			if(prev_backdrop) { 
-				prev_backdrop.style.zIndex = zbase - 5 + 10 * level;
+		/* cleanup the stack lower to this level */
+			for(var i=level-1;i>=0;i--) {
+				if(modalStack[i]===null) { 
+					modalStack[i] = x; 
+					modalStack[level] = null;
+					level = i;
+				} else break;
 			}
-			var last_backdrop = backdrops[level+1];
-			if(last_backdrop) {
-				last_backdrop.style.zIndex = zbase + 5 + 10 * level;
+			this.style.zIndex = zbase + 10 * level;
+			var this_backdrop = x.data('bs.modal')._backdrop;
+			if(this_backdrop) { 
+				this_backdrop.style.zIndex = zbase - 5 + 10 * level;
 			}
+
 			x.data('focus_in', document.activeElement);
 			var af = $(this).find('[autofocus]');
 			$(this).find('.modal-dialog').attr('tabindex', -1); // otherwise div will not get focus
@@ -87,10 +85,9 @@ if(!window.qwx) { window.qwx = {} }
 			if(ev.target != ev.currentTarget) return; // filter wild events from child elements
 			if(x.data('hidden')) return;
 			x.data('hidden', true);
-			modalStack.pop();
-			var backdrops = $('.modal-backdrop');
-			var last_backdrop = backdrops[backdrops.length-1];
-			//last_backdrop.remove();
+			modalStack[level] = null;
+			for(var i=modalStack.length-1;i>=level;i--) { if(modalStack[i]===null) modalStack.pop(); else break;  }
+
 			var prev = modalStack.length == 0 ? null : modalStack[modalStack.length-1];
 			if(prev) {
 				prev.on('keydown.dismiss.bs.modal',x.data('prev_keyha') ); 
@@ -100,7 +97,7 @@ if(!window.qwx) { window.qwx = {} }
 			x.data('isShown', false);
 			x.data('hideInProgress', false);
 			ev.stopPropagation();
-			if(opt && opt.remove) { x.remove(); } 
+			if(opt && opt.remove) { x.modal('dispose'); } 
 		});
 		x.modal(opt);
 	}
@@ -1260,6 +1257,7 @@ window.qwx.labelsWidget = function(place, opt) {
 					return newlist;
 				}
 			});
+			addplace.find('input').attr('nosave', true);
 			w = addplace.qwxAutocompleteWidget('widget');
 			self.labelplace.on('resize', function(ev) { 
 				addplace.css('width', 0);
