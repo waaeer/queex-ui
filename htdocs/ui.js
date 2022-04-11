@@ -707,6 +707,7 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 			.html('')
 			.trigger('selectionChange');
 		list.page = page; 
+		list.list = r.list;
 		for(var i=0,l=r.list.length;i<l;i++) { 
 			var html = qwx.$t(list.row_template, { o: r.list[i], list: list });
 			html.appendTo(list.place);
@@ -752,6 +753,9 @@ window.qwx.list.prototype.setAllFilters = function() {
 	for(var fld in this.filterSet) { 
  		this.filterSet[fld]();
 	}
+};
+window.qwx.list.prototype.getCurrentList = function() { 
+	return this.list;
 };
 
 
