@@ -758,7 +758,6 @@ window.qwx.list.prototype.getCurrentList = function() {
 	return this.list;
 };
 
-
 window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, default_value) { 
 	// filter_fld should be an object with "val" getter/setter method, and with .on('change',cb) method
 	var list = this;
@@ -1712,6 +1711,7 @@ window.qwx.checkBoxArray.prototype.val = function(x) {
 				this.value.push(x[i]);
 			}
 		}
+		this.place.trigger('setval');
 	}
 };
 
