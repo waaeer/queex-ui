@@ -1767,7 +1767,7 @@ window.qwx.iso2date = function(isodate) {
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3])) : null; 
 };
 window.qwx.time2iso = function(jsdate) {
-    return jsdate ? sprintf("%04d-%02d-%02d %02d:%02d:%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate(), jsdate.getHour(), jsdate.getMinute(), jsdate.getSecond() ) : null;
+    return jsdate ? sprintf("%04d-%02d-%02d %02d:%02d:%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate(), jsdate.getHours(), jsdate.getMinutes(), jsdate.getSeconds() ) : null;
 };
 window.qwx.iso2time = function(isodate) {
     var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)[T\s](\d?\d):(\d\d):(\d\d)/);
