@@ -975,6 +975,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.nullText = opt.nullText;
 	this.getData  = opt.getData;
 	this.disabled = opt.disabled;
+	this.itemSelector = opt.itemSelector || 'li';
 	var base = $('<div class="dropdown" data-dropdown="dropdown"/>').appendTo(place.html(''));
 	var btn  = $('<button class="btn dropdown-toggle" type="button" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
 	if(!this.disabled) btn.attr('data-toggle', 'dropdown');  
@@ -991,9 +992,12 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		if(opt.getData) {
 			opt.getData(function(data) {
 				self.gotData = true;
-				menu.html(qwx.t(opt.template, { list: data , el: self, opt: opt.templateOpt}));
+				if(_.isFunction(opt.template)) { opt.template.call(self, menu, data); }
+				else { 
+					menu.html(qwx.t(opt.template, { list: data , el: self, opt: opt.templateOpt}));
+				}
 				for(var i=0;i<data.length;i++) self.obyid[data[i].id] = data[i];
-				setmenuhandlers(menu.find('li'));
+				setmenuhandlers(menu.find(self.itemSelector));
 				select_current(val);
 				if(onload) onload();
 				place.trigger('menuLoaded');
@@ -1003,11 +1007,13 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	function setmenuhandlers(items) {
 		items.on('click', function(ev) {
 			if(self.disabled) return;
-			if(!$(this).hasClass('not-selectable')) {
+			var $this = $(this);
+			if(!$this.hasClass('not-selectable')) {
 				self.value = val = this.getAttribute('data-id');
 				if(self.value == '') self.value = val =  null;
-				menu.find('li').removeClass('selected');
-				var txt = $(this).addClass('selected').find('label').html();
+				menu.find(self.itemSelector).removeClass('selected');
+				$this.addClass('selected');
+				var txt = this.getAttribute('title') || $this.find('label').html();
 				selected.html( txt );
 				place.trigger('change', { id: self.value, el: this, text: txt });
 //				base.dropdown('toggle');
@@ -1015,20 +1021,19 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		});
 	}
 	function select_current(val) {
-		menu.find('li').removeClass('selected');
-		if(val) {
-			menu.find('li[data-id="' + val + '"]').addClass('selected');
-		}
+		menu.find(self.itemSelector).removeClass('selected');
+		menu.find(self.itemSelector + '[data-id="' + (val || '') + '"]').addClass('selected');
 	}
 
 	if(opt.data) { 
 		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
-		setmenuhandlers(menu.find('li'));
+		setmenuhandlers(menu.find(self.itemSelector));
 		select_current(opt.val);
 		if(onload) onload();
 	} else {
+		if(opt.val) self.value = opt.val;
 		base.on('show.bs.dropdown',function() {
-			self.fillMenu(opt.val);
+			self.fillMenu(self.value);
 		});
 	}
 	
@@ -1045,12 +1050,14 @@ window.qwx.pseudoSelectWidget.prototype.val = function() {
 		function set_value() { 
 			var is_set = false;
 			var btn = self.btn;
-			self.menu.find('li[data-id]').each(function() { 
+			self.menu.find(self.itemSelector + '[data-id]').each(function() { 
+				var $this = $(this);
 				if (this.getAttribute('data-id')==v) { 
-					btn.find('span.selected-option-text').html( $(this).addClass('selected').find('label').html() );
+					$this.addClass('selected');
+					btn.find('span.selected-option-text').html( this.getAttribute('title') || $this.find('label').html() );
 					is_set = true;
 				} else {
-					$(this).removeClass('selected'); 
+					$this.removeClass('selected'); 
 				}
 			});
 			if(!is_set || v===null) btn.find('span.selected-option-text').html(self.nullText);
