@@ -1109,7 +1109,12 @@ window.qwx.pseudoSelectWidget.prototype.objectVal = function() {
 window.qwx.pseudoSelectWidget.prototype.reload = function() { 
 	this.val(this.val());
 	return this.fillMenu();
-}
+};
+window.qwx.pseudoSelectWidget.prototype.reset = function(v) { 
+	this.gotData = false;
+	this.val(v);
+};
+
 
 +function($) { 
 	$.fn.qwxPseudoSelectWidget = function(option) { 
