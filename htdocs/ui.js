@@ -371,7 +371,33 @@ function formatSize(size) {
 window.qwx.tr = function(msg) { 
 	return window.tr && window.tr[msg] ? window.tr[msg] : msg;
 }
+window.qwx.ajaxq = function() { // XHR queue
+	this.q = [];
+}
+window.qwx.ajaxq.prototype.push = function(task) { 
+	this.q.push(task);
+	this.check();
+}
+window.qwx.ajaxq.prototype.check = function() { 
+	if(this.q.length==0) return;
+	if(this.running) return;
+	var task = this.q.shift();
+	this.running = true;
+	var self = this;
+	var params = _.extend({}, task, { 
+		always: function() { 
+			self.running = false;
+			self.check();
+		} 
+	});
+	qwx.ajax(params);
+}
+
+
 window.qwx.ajax = function(opt) { 
+	if(opt.queue) { 
+		return opt.queue.push(_.extend({}, opt, {queue: undefined}));
+	}
 	if(opt.block) { 
 		if(typeof opt.block == 'function') {
 			opt.block();
@@ -379,7 +405,7 @@ window.qwx.ajax = function(opt) {
 			qwx.messageBox(null, (opt.block.message ? opt.block.message : qwx.tr('Подождите...')), false, 'wait');
 		}
 	}
-	$.ajax({
+	var r = $.ajax({
 		url: opt.url, 
 		contentType: 'application/json',
 		data: JSON.stringify(opt.data),
@@ -425,6 +451,9 @@ window.qwx.ajax = function(opt) {
 			}
 		}
 	});
+	if(r && opt.always) { 
+		r.always(opt.always);
+	}
 };
 
 +function($) {
@@ -536,7 +565,7 @@ window.qwx.widget = function(place,opt) {
 	}
 	var self = this;
 	this.apiCall = opt.apiCall || function(method, args, block, cb) { 
-		qwx.ajax({
+		return qwx.ajax({
 			url:     self.api + '/' + method,
 			data:    args,
 			block:   block,
@@ -1033,7 +1062,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	} else {
 		if(opt.val) self.value = opt.val;
 		base.on('show.bs.dropdown',function() {
-			self.fillMenu(self.value);
+			if(!self.gotData) self.fillMenu(self.value);
 		});
 	}
 	
