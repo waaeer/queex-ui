@@ -1006,7 +1006,7 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.disabled = opt.disabled;
 	this.itemSelector = opt.itemSelector || 'li';
 	var base = $('<div class="dropdown" data-dropdown="dropdown"/>').appendTo(place.html(''));
-	var btn  = $('<button class="btn dropdown-toggle" type="button" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
+	var btn  = this.btn = $('<button class="btn dropdown-toggle" type="button" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
 	if(!this.disabled) btn.attr('data-toggle', 'dropdown');  
 	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
 	$('<span class="caret"/>').appendTo(btn);
@@ -1114,7 +1114,10 @@ window.qwx.pseudoSelectWidget.prototype.reset = function(v) {
 	this.gotData = false;
 	this.val(v);
 };
-
+window.qwx.pseudoSelectWidget.prototype.setDisabled = function(v) { 
+	this.disabled = v;
+	if(v) this.btn.removeAttr('data-toggle'); else this.btn.attr('data-toggle', 'dropdown');  
+};
 
 +function($) { 
 	$.fn.qwxPseudoSelectWidget = function(option) { 
