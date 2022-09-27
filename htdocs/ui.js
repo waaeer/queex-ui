@@ -307,7 +307,7 @@ if(!window.qwx) { window.qwx = {} }
 	}
 	window.qwx.args.prototype.serialize = function(){
 		var ar = [];
-		for(var k in this.data) { if (this.data[k]===null) continue; ar.push(encodeURIComponent(k) + "=" + encodeURIComponent(this.data[k])); }
+		for(var k in this.data) { if (this.data[k]===null || this.data[k]===undefined) continue; ar.push(encodeURIComponent(k) + "=" + encodeURIComponent(this.data[k])); }
 		return ar.join('&');
 	}
 	window.qwx.args.prototype.modify = function(new_args){
