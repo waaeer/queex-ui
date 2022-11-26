@@ -1902,7 +1902,7 @@ qwx.setJQWidget('qwxBiCalendarWidget', 'qwx.biCalendarWidget');
 window.qwx.fileWidget = function(place, opt) { 
 	qwx.widget.call(this, place, opt);
 	this.file_place    = opt.file_place;
-	this.file_template = opt.file_template || '<% if(file.content_type.match("^image/")) { %>'
+	this.file_template = opt.file_template || '<% if(file.content_type && file.content_type.match("^image/")) { %>'
 	 	+ '<div style="display:inline-block;position: relative;"><button class="btn btn-xs btn-delete" style="position: absolute; top:2px;right:2px; z-index:800;"><i class="fa fa-trash"></i></button>'
 	 	+ '<img style="max-width:400px;" src="<%- widget.file_prefix %>/<%- file.path %>">'
 		+ '<% if(file.width && file.height) { %><div class="c"><%= file.width %>x<%= file.height %>px</div><% } %>'
