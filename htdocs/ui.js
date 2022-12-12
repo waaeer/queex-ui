@@ -618,7 +618,7 @@ window.qwx.list = function(place,opt) {
 	   $(window).on('popstate', function(ev)  {
 		   var state = ev.originalEvent.state;
 		   if(state==null) state = qwx.initialArgs.data;
-		   list.displayList(state[page_arg], list.json2filter(state[filter_arg]), true );
+		   list.displayList(state[page_arg], (state[filter_arg] ? list.json2filter(state[filter_arg]) : list.defaultFilter), true );
 		   if(list.editDialog && edit_arg && state[edit_arg]) {
 				var id=state[edit_arg];
 				if(id=='undefined') id=undefined;
