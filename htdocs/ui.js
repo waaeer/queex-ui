@@ -668,6 +668,7 @@ window.qwx.list.prototype.constructor = window.qwx.list;
 
 window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) { 
 	var self = this;
+	if(self.disabled && !obj_id) return; 
 	if(this.edit_arg && ! this.ignoreState) { 
 		qwx.replaceState("edit " ,  null, [ this.edit_arg, obj_id]);
 	}
