@@ -1815,6 +1815,7 @@ window.qwx.time2iso = function(jsdate) {
     return jsdate ? sprintf("%04d-%02d-%02d %02d:%02d:%02d", jsdate.getYear()+1900, jsdate.getMonth()+1, jsdate.getDate(), jsdate.getHours(), jsdate.getMinutes(), jsdate.getSeconds() ) : null;
 };
 window.qwx.iso2time = function(isodate) {
+    if(!isodate) return null;
     var m = isodate.match(/^(\d\d\d\d)-(\d\d)-(\d\d)[T\s](\d?\d):(\d\d):(\d\d)/);
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6])) : qwx.iso2date(isodate);
 };
