@@ -1643,6 +1643,19 @@ window.qwx.editDialog = function (id, opt) {
 					if(el.hasAttribute('validate-filled')) { 
 						empty = !this.value.match(/\S/);
 					}
+					if(el.hasAttribute('validate-regexp')) { 
+						var reg = el.getAttribute('validate-regexp');
+						empty = !this.value.match(new RegExp(reg));
+						if(empty) {
+							if(el.hasAttribute('validate-regexp-message')) {
+								$el.data('validate-regexp-hint', new qwx.hint(el, el.getAttribute('validate-regexp-message'), 'hint-error'));
+							}
+						} else {
+							var hint = $el.data('validate-regexp-hint');
+							if(hint) hint.remove();
+						}
+					}
+
 				} else if (el.tagName == 'SELECT') { 
 					attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null;
 					if(el.hasAttribute('validate-selected')) {	
@@ -1665,7 +1678,7 @@ window.qwx.editDialog = function (id, opt) {
 
 				if(empty!==null) 
 					if(empty) { 
-						$el.addClass('not-filled'); empty_fields.push(el.title || name);
+						$el.addClass('not-filled'); empty_fields.push(el.getAttribute('title') || el.getAttribute('data-original-title') || name);
 						$el.on('change.validation', function() { validateElement.call(el); });
 					} else { 	
 						$el.removeClass('not-filled');
@@ -1848,10 +1861,9 @@ window.qwx.biCalendarWidget = function(place, opt) {
 //			place.trigger('change');
 		}
 	});
-	cal1.on('change', function() { if(self.is_interactive) {place.trigger('change'); }});
-	cal2.on('change', function() { if(self.is_interactive) {place.trigger('change'); }});
+	cal1.on('change', function(ev) { ev.stopPropagation(); if(self.is_interactive) { place.trigger('change'); } });
+	cal2.on('change', function(ev) { ev.stopPropagation(); if(self.is_interactive) { place.trigger('change'); } });
 
-	place.find('span').on('change', function(ev) { ev.stopPropagation(); });
 	this.cal1 = cal1;
 	this.cal2 = cal2;
 	this.div = div;
@@ -1873,9 +1885,7 @@ window.qwx.biCalendarWidget.prototype.val = function(v) {
 		return this;
 	}
 };
-window.qwx.biCalendarWidget.prototype.duration_md = function() {
-	var v1 = this.cal1.datepicker('getDate');
-	var v2 = this.cal2.datepicker('getDate');
+window.qwx.biCalendarWidget.prototype.duration_md_md = function(v1,v2) { 
 	if(v1 && v2) {
 		var sign = v1 > v2 ? '-' : '';
 		if(!v1 || !v2) { fld_dur.html(''); return; }
@@ -1891,6 +1901,9 @@ window.qwx.biCalendarWidget.prototype.duration_md = function() {
 	} else { 
 		return undefined;
 	}
+}
+window.qwx.biCalendarWidget.prototype.duration_md = function() {
+	return this.duration_md_md(this.cal1.datepicker('getDate'), this.cal2.datepicker('getDate'));
 };
 
 
@@ -1968,6 +1981,16 @@ qwx.setJQWidget('qwxFileWidget', 'qwx.fileWidget');
 
 /* -- end file widget -- */
 
+
+/* hint */
+window.qwx.hint = function(place, msg, className) { 
+	this.$place = $(place);
+	this.$place.popover({content:msg, trigger:'focus', template: '<div class="popover qwx-popover-hint ' + (className || '') + '" role="tooltip"><div class="arrow"></div><div class="popover-body"></div></div>'})
+		.popover('show');
+};
+window.qwx.hint.prototype.remove = function() { 
+ 	this.$place.popover('dispose');
+};
 
 /* -- val() and w() for widgets ---*/
 +function($) { 

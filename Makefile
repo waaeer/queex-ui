@@ -7,6 +7,7 @@ QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
 
 BOOTSTRAP=3.4.1
 BOOTSTRAP4=4.6.0
+BOOTSTRAP5=5.2.0
 TINYMCE=4.9.11
 TINYMCE5=5.6.1
 #JQUERY=1.12.4
@@ -25,7 +26,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4 install_tinymce5 install_jstools install_bootstrap3 install_bootstrap4 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js install_jstree
+install_3rdparty: install_tinymce4 install_tinymce5 install_jstools install_bootstrap3 install_bootstrap4 install_bootstrap5 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js install_jstree
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
@@ -81,6 +82,14 @@ install_bootstrap4:
 	( mkdir /tmp/bootstrap-$(BOOTSTRAP4)-dist )
 	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP4)/bootstrap-$(BOOTSTRAP4)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP4)-dist.zip -d /tmp/bootstrap-$(BOOTSTRAP4)-dist && cd /tmp/bootstrap-$(BOOTSTRAP4)-dist/bootstrap-$(BOOTSTRAP4)-dist && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/bootstrap4/{} \; )
 	( rm -rf /tmp/bootstrap-$(BOOTSTRAP4)-dist* )
+
+install_bootstrap5:
+	( if [ ! -d "$(QLIB)/j/bootstrap5" ]; then $(SUDO) mkdir $(QLIB)/j/bootstrap5 ; fi )
+	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QLIB)/j/bootstrap5 && $(SUDO) chown :devel $(QLIB)/j/bootstrap5; fi )
+	( rm -rf /tmp/bootstrap-$(BOOTSTRAP5)-dist* /tmp/dist)
+	( mkdir /tmp/bootstrap-$(BOOTSTRAP5)-dist )
+	( wget -c -O /tmp/bootstrap-$(BOOTSTRAP5)-dist.zip https://github.com/twbs/bootstrap/releases/download/v$(BOOTSTRAP5)/bootstrap-$(BOOTSTRAP5)-dist.zip && unzip -qo /tmp/bootstrap-$(BOOTSTRAP5)-dist.zip -d /tmp/bootstrap-$(BOOTSTRAP5)-dist && cd /tmp/bootstrap-$(BOOTSTRAP5)-dist/bootstrap-$(BOOTSTRAP5)-dist && find . -type f -exec $(SUDO) install $(INSTALLOPT) -D {} $(QLIB)/j/bootstrap5/{} \; )
+	( rm -rf /tmp/bootstrap-$(BOOTSTRAP5)-dist* )
 
 install_popper:
 	( if [ ! -d /tmp/jstools-qui ]; then mkdir /tmp/jstools-qui; fi )
