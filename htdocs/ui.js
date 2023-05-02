@@ -1693,7 +1693,7 @@ window.qwx.editDialog = function (id, opt) {
 		}
 
 		if(empty_fields.length>0) { 
-			window.qwx.messageBox('Ошибка', (empty_fields.length==1 ? 'Не заполнено поле ' : 'Не заполнены поля ') + empty_fields.join(', '), true, 'error');
+			window.qwx.messageBox('Ошибка', (empty_fields.length==1 ? 'Не заполнено поле ' : 'Не заполнены поля ') + _.map(empty_fields, function(x) { return '"' + x + '"'; }).join(', '), true, 'error');
 		}
 		if(empty_fields.length>0 || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
