@@ -1629,7 +1629,7 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.getAfterSave && self.getAfterSave != 'final' ) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
-		var postponed_radio_validation = {}, empty_fields = [];
+		var postponed_radio_validation = {}, empty_fields = [], error_fields = [];
 		function validateElement() { 
 			var el   = this;
 			var $el = $(el);
@@ -1638,15 +1638,16 @@ window.qwx.editDialog = function (id, opt) {
 			var type = this.getAttribute('type');
 			if(name) { 
 				var empty = null;
+				var other_error = null;
 				if((el.tagName == 'INPUT' && (type == 'text' || type == 'number')) || el.tagName == 'TEXTAREA') { 
 					attr[name] = this.value;
 					if(el.hasAttribute('validate-filled')) { 
 						empty = !this.value.match(/\S/);
 					}
-					if(el.hasAttribute('validate-regexp')) { 
+					if(!empty && el.hasAttribute('validate-regexp')) { 
 						var reg = el.getAttribute('validate-regexp');
-						empty = !this.value.match(new RegExp(reg));
-						if(empty) {
+						other_error = !this.value.match(new RegExp(reg));
+						if(other_error) {
 							if(el.hasAttribute('validate-regexp-message')) {
 								$el.data('validate-regexp-hint', new qwx.hint(el, el.getAttribute('validate-regexp-message'), 'hint-error'));
 							}
@@ -1676,9 +1677,9 @@ window.qwx.editDialog = function (id, opt) {
 					}
 				}
 
-				if(empty!==null) 
-					if(empty) { 
-						$el.addClass('not-filled'); empty_fields.push(el.getAttribute('title') || el.getAttribute('data-original-title') || name);
+				if(empty!==null || other_error !==null) 
+					if(empty || other_error) { 
+						$el.addClass('not-filled'); (empty ? empty_fields : error_fields).push(el.getAttribute('title') || el.getAttribute('data-original-title') || name);
 						$el.on('change.validation', function() { validateElement.call(el); });
 					} else { 	
 						$el.removeClass('not-filled');
@@ -1695,7 +1696,7 @@ window.qwx.editDialog = function (id, opt) {
 		if(empty_fields.length>0) { 
 			window.qwx.messageBox('Ошибка', (empty_fields.length==1 ? 'Не заполнено поле ' : 'Не заполнены поля ') + _.map(empty_fields, function(x) { return '"' + x + '"'; }).join(', '), true, 'error');
 		}
-		if(empty_fields.length>0 || (self.validator &&  !self.validator(form, attr))) { 
+		if(empty_fields.length>0 || error_fields.length>0 || (self.validator &&  !self.validator(form, attr))) { 
 			return false;
 		}
 		var id = form.data('id');
@@ -1985,7 +1986,9 @@ qwx.setJQWidget('qwxFileWidget', 'qwx.fileWidget');
 /* hint */
 window.qwx.hint = function(place, msg, className) { 
 	this.$place = $(place);
-	this.$place.popover({content:msg, trigger:'focus', template: '<div class="popover qwx-popover-hint ' + (className || '') + '" role="tooltip"><div class="arrow"></div><div class="popover-body"></div></div>'})
+	this.$place.popover({content:msg, trigger:'focus', 
+			placement: 'bottom',
+			template: '<div class="popover qwx-popover-hint ' + (className || '') + '" role="tooltip"><div class="arrow"></div><div class="popover-body"></div></div>'})
 		.popover('show');
 };
 window.qwx.hint.prototype.remove = function() { 
