@@ -1,6 +1,7 @@
 PREFIX ?=/usr/share/queex
 SUDO ?= sudo
 INSTALLOPT=$(if $(SUDO), --group=devel --mode=0664 ,"--mode=0644")
+PATH:=$(PATH):/usr/local/bin
 QLIB=$(PREFIX)/htdocs/lib
 QUI-CTPP=$(PREFIX)/ctpp/lib/queex-ui
 QUI-HTDOCS=$(PREFIX)/htdocs/lib/queex-ui
@@ -75,13 +76,11 @@ install_tinymce6:
 	( wget -c -O /tmp/tmce6_lang_ru.zip https://download.tiny.cloud/tinymce/community/languagepacks/6/ru.zip && $(SUDO) unzip -qo /tmp/tmce6_lang_ru.zip -d $(QLIB)/j/tinymce6/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 	## add codesample alternative plugin
-	( $(SUDO) rm -rf /tmp/TinyMCE6-Codesample )
-	( cd /tmp && git clone https://github.com/waaeer/TinyMCE6-Codesample.git )
-	( cd /tmp/TinyMCE6-Codesample && uglifyjs --compress --mangle -- codesample/plugin.js > codesample/plugin.min.js )
-	( cd /tmp/TinyMCE6-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce6-plugins/{} \; )
-	( $(SUDO) rm -rf /tmp/TinyMCE6-Codesample )
-
-		
+#	( $(SUDO) rm -rf /tmp/TinyMCE6-Codesample )
+#	( cd /tmp && git clone https://github.com/waaeer/TinyMCE6-Codesample.git )
+#	( cd /tmp/TinyMCE6-Codesample && uglifyjs --compress --mangle -- codesample/plugin.js > codesample/plugin.min.js )
+#	( cd /tmp/TinyMCE6-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce6-plugins/{} \; )
+#	( $(SUDO) rm -rf /tmp/TinyMCE6-Codesample )
 
 install_bootstrap3:
 	( if [ ! -d "$(QLIB)/j/bootstrap" ]; then $(SUDO) mkdir $(QLIB)/j/bootstrap ; fi )
