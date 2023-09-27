@@ -9,7 +9,8 @@ BOOTSTRAP=3.4.1
 BOOTSTRAP4=4.6.0
 BOOTSTRAP5=5.2.0
 TINYMCE=4.9.11
-TINYMCE5=5.6.1
+TINYMCE5=5.10.7
+TINYMCE6=6.7.0
 #JQUERY=1.12.4
 JQUERY=3.5.1
 BOOTSTRAP_DP=1.9.0
@@ -26,7 +27,7 @@ install: install_templates install_static
 
 install_all: install install_3rdparty
 
-install_3rdparty: install_tinymce4 install_tinymce5 install_jstools install_bootstrap3 install_bootstrap4 install_bootstrap5 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js install_jstree
+install_3rdparty: install_tinymce4  install_tinymce6 install_jstools install_bootstrap3 install_bootstrap4 install_bootstrap5 install_popper install_js_sprintf install_bootstrap_datepicker install_snap install_tinymce_youtube install_viewer_js install_jstree
 
 bigclean:
 	$(SUDO) rm -rf $(QADM-CTPP) $(QADM-HTDOCS) 
@@ -54,20 +55,34 @@ install_tinymce4:
 	( wget -c -O /tmp/tmce4_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce4_lang_ru.zip -d $(QLIB)/j/tinymce4/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 
-install_tinymce5:
+#install_tinymce5:
+#	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
+#	( wget -c -O /tmp/tmce5.zip https://download.tiny.cloud/tinymce/community/tinymce_$(TINYMCE5).zip && unzip -qo /tmp/tmce5.zip -d /tmp )
+#	( cd /tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce5/{} \; )
+#	( wget -c -O /tmp/tmce5_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce5_lang_ru.zip -d $(QLIB)/j/tinymce5/js/tinymce/ )
+#	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
+#	## add codesample alternative plugin
+#	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
+#	( cd /tmp && git clone https://github.com/waaeer/TinyMCE5-Codesample.git )
+#	( cd /tmp/TinyMCE5-Codesample && uglifyjs --compress --mangle -- codesample/plugin.js > codesample/plugin.min.js )
+#	( cd /tmp/TinyMCE5-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce5-plugins/{} \; )
+#	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
+
+install_tinymce6:
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
-	( wget -c -O /tmp/tmce5.zip http://download.ephox.com/tinymce/community/tinymce_$(TINYMCE5).zip && unzip -qo /tmp/tmce5.zip -d /tmp )
-	( cd /tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce5/{} \; )
-	( wget -c -O /tmp/tmce5_lang_ru.zip http://archive.tinymce.com/i18n/download.php?download=ru && $(SUDO) unzip -qo /tmp/tmce5_lang_ru.zip -d $(QLIB)/j/tinymce5/js/tinymce/ )
+	( wget -c -O /tmp/tmce6.zip https://download.tiny.cloud/tinymce/community/tinymce_$(TINYMCE6).zip && unzip -qo /tmp/tmce6.zip -d /tmp )
+	( cd /tmp/tinymce && find . -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce6/{} \; )
+	( wget -c -O /tmp/tmce6_lang_ru.zip https://download.tiny.cloud/tinymce/community/languagepacks/6/ru.zip && $(SUDO) unzip -qo /tmp/tmce6_lang_ru.zip -d $(QLIB)/j/tinymce6/js/tinymce/ )
 	( $(SUDO) rm -rf /tmp/tmce* /tmp/tinymce* )
 	## add codesample alternative plugin
-	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
-	( cd /tmp && git clone https://github.com/waaeer/TinyMCE5-Codesample.git )
-	( cd /tmp/TinyMCE5-Codesample && uglifyjs --compress --mangle -- codesample/plugin.js > codesample/plugin.min.js )
-	( cd /tmp/TinyMCE5-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce5-plugins/{} \; )
-	( $(SUDO) rm -rf /tmp/TinyMCE5-Codesample )
+	( $(SUDO) rm -rf /tmp/TinyMCE6-Codesample )
+	( cd /tmp && git clone https://github.com/waaeer/TinyMCE6-Codesample.git )
+	( cd /tmp/TinyMCE6-Codesample && uglifyjs --compress --mangle -- codesample/plugin.js > codesample/plugin.min.js )
+	( cd /tmp/TinyMCE6-Codesample && find codesample -type f -exec $(SUDO) install -m 664 -g devel -D {} $(QLIB)/j/tinymce6-plugins/{} \; )
+	( $(SUDO) rm -rf /tmp/TinyMCE6-Codesample )
 
-	
+		
+
 install_bootstrap3:
 	( if [ ! -d "$(QLIB)/j/bootstrap" ]; then $(SUDO) mkdir $(QLIB)/j/bootstrap ; fi )
 	( if [ -n "$(SUDO)" ]; then $(SUDO) chmod g+w $(QLIB)/j/bootstrap && $(SUDO) chown :devel $(QLIB)/j/bootstrap; fi )
