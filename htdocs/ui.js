@@ -637,14 +637,28 @@ window.qwx.list = function(place,opt) {
 		}
 	}
 	if(opt.withRowSelection) { 
+		var self = this;
 		this.makeRowSelectable = function(html,obj) {
-			var clickable = _.isString(opt.withRowSelection) ? html.find(opt.withRowSelection) : html; // withRowSelection может быть строкой - тогда это селектор внутри строки списка
-			clickable.on('click', function(ev) {
-				var clicked = ev.originalEvent.target, $clicked = $(clicked);
-				if($clicked.hasClass('dropdown-toggle') || clicked.tagName == 'A' || $clicked.closest('a').length>0 ) return;
+			var toggleSel = function() {
 				html.toggleClass('selected');
 				list.place.trigger('selectionChange', html, obj);
+			};
+			var clickable = _.isString(opt.withRowSelection) ? html.find(opt.withRowSelection) : html; // withRowSelection может быть строкой - тогда это селектор внутри строки списка
+			clickable.on('click', function(ev) {
+				var clicked = ev.delegateTarget, $clicked = $(clicked);
+				if($clicked.hasClass('dropdown-toggle') || clicked.tagName == 'A' || $clicked.closest('a').length>0 ) return;
+				if(ev.shiftKey && self.lastSelect) {
+					var prev = self.lastSelect;
+					self.findInterval(prev[0], html[0]).each(function() {
+						$(this).trigger('toggleSelection');
+					});
+				}
+				toggleSel();
+				if(html.hasClass('selected')) self.lastSelect = html;
 				ev.stopPropagation();
+			});
+			html.on('toggleSelection', function(ev) {
+				clickable.trigger('click');
 			});
 		};
 	}
@@ -728,6 +742,7 @@ window.qwx.list.prototype.displayList = function(page,filter, filter_set_back) {
 	list.filter = _.extend({},filter);
 	if(filter_set_back) list.setBackFilters();
 	if(this.paused) return; 
+	this.lastSelect = undefined;
 
     if(list.onBeforeDisplayList) list.onBeforeDisplayList(list);
 	list.place.trigger('beforeDisplayList', { page: page, filter: filter });
@@ -788,6 +803,20 @@ window.qwx.list.prototype.getCurrentList = function() {
 	return this.list;
 };
 
+window.qwx.list.prototype.findInterval = function (row1, row2) {
+	var nodes = this.place.children();
+	var stage = 0, interval = $([]);
+	for(var i=0,l=nodes.length;i<l;i++) {
+		var node = nodes[i];
+		if(stage==0) {
+			if(node==row1 || node==row2) { stage=1; }
+		} else if(stage==1) {
+			if(node==row1 || node==row2) { stage = 2; break; }
+			interval.push(node);
+		}
+	}
+	return stage == 2 ? interval: $([]);
+};
 window.qwx.list.prototype.registerFilter = function(fld, filter_fld, modifier, default_value) { 
 	// filter_fld should be an object with "val" getter/setter method, and with .on('change',cb) method
 	var list = this;
