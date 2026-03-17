@@ -97,7 +97,9 @@ if(!window.qwx) { window.qwx = {} }
 			x.data('isShown', false);
 			x.data('hideInProgress', false);
 			ev.stopPropagation();
-			if(opt && opt.remove) { x.modal('dispose'); } 
+			if(opt && opt.remove) {
+				x.remove();
+			} 
 		});
 		x.modal(opt);
 	}
