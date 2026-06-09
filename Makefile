@@ -170,7 +170,7 @@ install_tinymce_youtube:
 	(cd /tmp/tmyout/ && find youtube -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/tinymce4/js/tinymce/plugins/{} \; )
 
 install_viewer_js:
-	(cd /tmp &&	wget -c http://viewerjs.org/releases/viewerjs-$(VIEWERJS).zip && unzip viewerjs-$(VIEWERJS).zip)
+	(cd /tmp &&	wget -c https://github.com/fengyuanchen/viewerjs/archive/refs/tags/v$(VIEWERJS).zip && unzip v$(VIEWERJS).zip)
 	(cd /tmp/viewerjs-$(VIEWERJS) && find ViewerJS -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/{} \; ) 
 
 install_templates:
