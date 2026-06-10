@@ -17,7 +17,7 @@ JQUERY=3.7.1
 BOOTSTRAP_DP=1.9.0
 SPRINTF_JS=1.1.3
 SNAP=0.5.1
-VIEWERJS=1.11.7
+VIEWERJS=0.5.8
 FONTAWESOME=4.7.0
 FONTAWESOME_MAJOR=4
 JSTREE=3.3.17
@@ -170,7 +170,8 @@ install_tinymce_youtube:
 	(cd /tmp/tmyout/ && find youtube -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/tinymce4/js/tinymce/plugins/{} \; )
 
 install_viewer_js:
-	(cd /tmp &&	wget -c https://github.com/fengyuanchen/viewerjs/archive/refs/tags/v$(VIEWERJS).zip && unzip v$(VIEWERJS).zip)
+	(cd /tmp &&     wget -c http://viewerjs.org/releases/viewerjs-$(VIEWERJS).zip && unzip viewerjs-$(VIEWERJS).zip)
+#	(cd /tmp &&	wget -c https://github.com/fengyuanchen/viewerjs/archive/refs/tags/v$(VIEWERJS).zip && unzip v$(VIEWERJS).zip)
 	(cd /tmp/viewerjs-$(VIEWERJS) && find ViewerJS -type f -exec $(SUDO) install $(INSTALLOPT)  -D {} $(QLIB)/j/{} \; ) 
 
 install_templates:
