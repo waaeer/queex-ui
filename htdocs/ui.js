@@ -854,7 +854,7 @@ window.qwx.list.prototype.reloadObject = function(id) {
 };
 window.qwx.list.prototype.setObject = function(obj, opt) { 
 
-	var place = document.getElementById('row-' + obj.id);
+	var place        = this.place.find('[id="row-' + obj.id + ']')[0];
 	if(!place) place = this.place.find('[data-id=' + obj.id + ']')[0];
 
 	if(place) { 
