@@ -22,7 +22,6 @@ if(!window.qwx) { window.qwx = {} }
 	        }
 	        return this;
 	    };
-	
 	};
 
 	var zbase = 1040;
@@ -577,6 +576,7 @@ window.qwx.widget = function(place,opt) {
 };
 window.qwx.widget.prototype.setDisabled = function(v) {
 	this.disabled = v;
+	if(v) this.place.addClass('disabled'); else this.place.removeClass('disabled');
 };
 
 window.qwx.list = function(place,opt) { 
@@ -664,17 +664,18 @@ window.qwx.list = function(place,opt) {
 			});
 		};
 	}
+
+	var args = qwx.getArgs();
 	if(this.ignoreArgs) { 
 		this.displayList(1, this.defaultFilter, true);	
 	} else { 
-		var args = qwx.getArgs();
 		this.displayList(args.arg(page_arg), args.arg(filter_arg) ? this.json2filter(args.arg(filter_arg)) : this.defaultFilter, true);	
-		if(this.editDialog && edit_arg ) { 
-			var id=args.arg(edit_arg);
-			if(id) { 
-				if(id=='undefined') id=undefined;
-				this.openEditDialog(id);
-			}
+	}
+	if(this.editDialog && edit_arg ) { 
+		var id=args.arg(edit_arg);
+		if(id) { 
+			if(id=='undefined') id=undefined;
+			this.openEditDialog(id);
 		}
 	}
 }
@@ -685,8 +686,8 @@ window.qwx.list.prototype.constructor = window.qwx.list;
 window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) { 
 	var self = this;
 	if(self.disabled && !obj_id) return; 
-	if(this.edit_arg && ! this.ignoreState) { 
-		qwx.replaceState("edit " ,  null, [ this.edit_arg, obj_id]);
+	if(this.edit_arg) { 
+		qwx.replaceState("edit " ,  null, [ this.edit_arg, obj_id ?? 'undefined']);
 	}
 	return new qwx.editDialog(obj_id, _.extend({
 		cid      : this.cid,
@@ -705,7 +706,7 @@ window.qwx.list.prototype.openEditDialog = function(obj_id, success_cb, opt) {
 			self.place.trigger('afterSave', [self, o, id]);
 		},
 		onClose: function() {
-			if(!self.ignoreState && self.edit_arg) qwx.replaceState("edit " ,  null, [ self.edit_arg, null]);
+			if(self.edit_arg) qwx.replaceState("edit " ,  null, [ self.edit_arg, null]);
 		}
 	}, this.editDialog, opt));
 }
@@ -1036,11 +1037,13 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	this.nullText = opt.nullText;
 	this.getData  = opt.getData;
 	this.disabled = opt.disabled;
+	this.multiple = opt.multiple;
 	this.itemSelector = opt.itemSelector || 'li';
+	this.template     = opt.template || '<% for(var i in list) {  var f = list[i]; %><li title="<%- f.title %>" data-id="<%= f.id %>"><%- f.title %></li><% } %>';
 	var base = $('<div class="dropdown" data-dropdown="dropdown"/>').appendTo(place.html(''));
 	var btn  = this.btn = $('<button class="btn dropdown-toggle" type="button" >/').addClass(opt.buttonClass || 'btn-default').appendTo(base);
 	if(!this.disabled) btn.attr('data-toggle', 'dropdown');  
-	var selected = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
+	var selected = this.selectedText = $('<span class="selected-option-text"/>').html(opt.nullText).appendTo(btn);
 	$('<span class="caret"/>').appendTo(btn);
 	var menu = $('<ul class="dropdown-menu pseudo-select"/>').appendTo(base);
 	if(opt.menuClass) menu.addClass(opt.menuClass);
@@ -1053,9 +1056,10 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 		if(opt.getData) {
 			opt.getData(function(data) {
 				self.gotData = true;
-				if(_.isFunction(opt.template)) { opt.template.call(self, menu, data); }
+				self.items = data;
+				if(_.isFunction(self.template)) { self.template.call(self, menu, data); }
 				else { 
-					menu.html(qwx.t(opt.template, { list: data , el: self, opt: opt.templateOpt}));
+					menu.html(qwx.t(self.template, { list: data , el: self, opt: opt.templateOpt}));
 				}
 				for(var i=0;i<data.length;i++) self.obyid[data[i].id] = data[i];
 				setmenuhandlers(menu.find(self.itemSelector));
@@ -1070,14 +1074,27 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 			if(self.disabled) return;
 			var $this = $(this);
 			if(!$this.hasClass('not-selectable')) {
-				self.value = val = this.getAttribute('data-id');
-				if(self.value == '') self.value = val =  null;
-				menu.find(self.itemSelector).removeClass('selected');
-				$this.addClass('selected');
-				var txt = this.getAttribute('title') || $this.find('label').html();
-				selected.html( txt );
-				place.trigger('change', { id: self.value, el: this, text: txt });
+				var v = this.getAttribute('data-id');
+				if(self.multiple) {
+					self.value ??= [];
+					if (self.value && self.value.filter(vv => (vv==v) ).length>0) { // already selected
+						self.value = val = self.value.filter(vv => (vv!=v)); // exclude this value
+						$(this).removeClass('selected');
+					} else {
+						self.value = val = [...self.value, v];
+						$(this).addClass('selected');
+					}
+					self.setText(); 
+				} else {
+					self.value = val = v;
+					if(self.value == '') self.value = val =  null;
+					menu.find(self.itemSelector).removeClass('selected');
+					$this.addClass('selected');
+					var txt = this.getAttribute('title') || $this.find('label').html();
+					selected.html( txt );
+					place.trigger('change', { id: self.value, el: this, text: txt });
 //				base.dropdown('toggle');
+				}
 			}
 		});
 	}
@@ -1087,7 +1104,8 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 	}
 
 	if(opt.data) { 
-		menu.html(qwx.t(opt.template, { list: opt.data , el: this})); 
+		self.items = opt.data;
+		menu.html(qwx.t(self.template, { list: opt.data , el: this})); 
 		setmenuhandlers(menu.find(self.itemSelector));
 		select_current(opt.val);
 		if(onload) onload();
@@ -1102,26 +1120,43 @@ window.qwx.pseudoSelectWidget = function(place,opt) {
 window.qwx.pseudoSelectWidget.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.pseudoSelectWidget.prototype.constructor = window.qwx.pseudoSelectWidget;
 
+window.qwx.pseudoSelectWidget.prototype.setText = function() { 
+	this.selectedText.html( 
+		this.menu.find(this.itemSelector).filter('.selected').get().map(x=>x.getAttribute('title') || $(x).find('label').html()).join(', ') || this.nullText
+	);
+}
 window.qwx.pseudoSelectWidget.prototype.val = function() { 
 	if(arguments.length==1) {
 		var v = arguments[0];
-		if(_.isObject(v)) v = v.id;
+		if(!this.multiple && _.isObject(v)) v = v.id;
 		this.value = v;
 		var self = this;
 		function set_value() { 
 			var is_set = false;
 			var btn = self.btn;
+			var texts = [];
 			self.menu.find(self.itemSelector + '[data-id]').each(function() { 
 				var $this = $(this);
-				if (this.getAttribute('data-id')==v) { 
-					$this.addClass('selected');
-					btn.find('span.selected-option-text').html( this.getAttribute('title') || $this.find('label').html() );
-					is_set = true;
-				} else {
-					$this.removeClass('selected'); 
+				var id = this.getAttribute('data-id');
+				if (self.multiple) { 
+					if(v && v.filter(x=>(x==id)).length>0) {
+						$this.addClass('selected');
+						is_set = true;
+						texts.push(this.getAttribute('title') || $this.find('label').html());
+					} else { 
+						$this.removeClass('selected'); 
+					}
+				} else { 
+					if(id==v) { 
+						$this.addClass('selected');
+						btn.find('span.selected-option-text').html( this.getAttribute('title') || $this.find('label').html() );
+						is_set = true;
+					} else {
+						$this.removeClass('selected'); 
+					}
 				}
 			});
-			if(!is_set || v===null) btn.find('span.selected-option-text').html(self.nullText);
+			self.setText();		
 			self.place.trigger('setval');
 		};
 		if(this.getData && !this.gotData) { 
@@ -1148,8 +1183,25 @@ window.qwx.pseudoSelectWidget.prototype.reset = function(v) {
 };
 window.qwx.pseudoSelectWidget.prototype.setDisabled = function(v) { 
 	this.disabled = v;
-	if(v) this.btn.removeAttr('data-toggle'); else this.btn.attr('data-toggle', 'dropdown');  
+	if(v) {
+		this.btn.removeAttr('data-toggle');
+		this.place.addClass('disabled');
+	} else {
+		this.btn.attr('data-toggle', 'dropdown');
+		this.place.removeClass('disabled');
+	}
 };
+window.qwx.pseudoSelectWidget.prototype.disableItem = function(v, disable) { 
+	if(v) { 
+		var item = this.menu.find(this.itemSelector + '[data-id='+ v + ']');
+		if(disable) item.addClass('not-selectable'); else item.removeClass('not-selectable');
+	}		
+};
+window.qwx.pseudoSelectWidget.prototype.getItems = function() {
+	return this.items;
+};
+
+
 
 +function($) { 
 	$.fn.qwxPseudoSelectWidget = function(option) { 
@@ -1550,6 +1602,30 @@ window.qwx.deepScan = function (top, selector, exclude, cb) {
 	if(children.length > 0) 
 		window.qwx.deepScan(children, selector, exclude, cb);
 };
+window.qwx.getValue = function(o, f) { 
+	if(o===null || f===null) return null;
+	var path = f.split(/\./);
+	for(var k in path) {
+		o = o[path[k]];
+		if (o===undefined || o===null) return o;
+	}
+	return o;
+}
+window.qwx.setValue = function(obj, name, val) {
+	if(val===undefined) return;
+	if(name.match(/\./)) { // something inside json field
+		var path = name.split(/\./);
+		obj[path[0]] ||= {'||': {}}; // конструкция, которая при сохранении вызывает deep Merge, а не простое присваивание
+		var l=path.length, cur = obj[path[0]]['||'];
+		for(var i=1;i<l-1;i++) {
+			cur = (cur[path[i]] ||= {});
+		}
+		cur[path[l-1]] = val;
+	} else {
+		obj[name] = val;
+	}
+}
+
 /* -- editDialog -- */
 window.qwx.new_id_counter = 0;
 
@@ -1592,7 +1668,8 @@ window.qwx.editDialog = function (id, opt) {
 					 { label: '<span class="fa fa-trash"></span>&nbsp;' + (self.deleteButton.label || 'Удалить'), btnClass: 'btn btn-secondary btn-delete' }
 				]),
 				title: _.isFunction(opt.title) ? opt.title(obj) : opt.title, 
-				width: opt.width }, dialogOpt ));
+				width: opt.width 
+			}, dialogOpt ));
 		}
 
 		var dialog = modal.find('.modal-dialog');
@@ -1600,17 +1677,8 @@ window.qwx.editDialog = function (id, opt) {
 		self.modal = modal;
 		modal.modalBox({backdrop: 'static', keyboard: false});
 		
-		dialog.find('input[type=text],input[type=number],textarea').each(function() { var n = this.name; this.disabled = self.disabled; if(n) this.value = obj[n]!=undefined ? obj[n] : ''; });
-		dialog.find('select').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; $(this).val( v && (typeof v == 'object' ? v.id: v )); }});
-		dialog.find('input[type=checkbox]').each(function() { this.disabled = self.disabled; if(this.name) { var v = obj[this.name]; if(v) v = (typeof v == 'object' ? v.id : v); this.checked = (v=='t' || v > 0); }});
-		dialog.find('input[type=radio]').each(function() {  this.disabled = self.disabled;  if(this.name) { var v = obj[this.name]; if(v!=undefined) this.checked = ((typeof v == 'object' ? v.id : v) == this.value) }});
-		dialog.find('[role=widget]').each(function() { var name = this.getAttribute('name'); if(name) $(this).data('widget').val(obj[name]); });
-
+		self.fillInputs(dialog,obj);
 		if(self.fillDialog) self.fillDialog(dialog, obj, add_data, self);
-
-		if(self.disabled) dialog.find('[role=widget]').each(function() { 
-			$(this).data('widget').setDisabled(true);
-		});
 
 		dialog.find('[autofocus]').focus();
 		dialog.data('id', obj.id);
@@ -1660,7 +1728,8 @@ window.qwx.editDialog = function (id, opt) {
 		if(self.getAfterSave && self.getAfterSave != 'final' ) {
 			attr.__return =  self.data_prepare_view_opt || 1;
 		}
-		var postponed_radio_validation = {}, empty_fields = [], error_fields = [];
+		var postponed_radio_validation = {}, empty_fields = [], error_fields = [], radio_ok = {};
+		
 		function validateElement() { 
 			var el   = this;
 			var $el = $(el);
@@ -1671,7 +1740,7 @@ window.qwx.editDialog = function (id, opt) {
 				var empty = null;
 				var other_error = null;
 				if((el.tagName == 'INPUT' && (type == 'text' || type == 'number')) || el.tagName == 'TEXTAREA') { 
-					attr[name] = this.value;
+					qwx.setValue(attr, name, this.value);
 					if(el.hasAttribute('validate-filled')) { 
 						empty = !this.value.match(/\S/);
 					}
@@ -1689,22 +1758,27 @@ window.qwx.editDialog = function (id, opt) {
 					}
 
 				} else if (el.tagName == 'SELECT') { 
-					attr[name] = this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null;
+					qwx.setValue(attr, name, this.selectedIndex !== null && this.options[this.selectedIndex] ?  this.options[this.selectedIndex].value: null );
 					if(el.hasAttribute('validate-selected')) {	
 						var v= $(el).val();
 						empty = (v === null || v==='');
 					}
 				} else if(el.tagName == 'INPUT') { 
-					if(type == 'checkbox')   attr[name] = this.checked ? 1 : 0;
-					else if(type == 'radio' && this.checked) attr[name] = this.value;
+					var v;
+					if(type == 'checkbox') qwx.setValue(attr, name, v = this.checked ? 1 : 0);
+					else if(type == 'radio' && this.checked) qwx.setValue(attr, name, v = this.value);
 					if(el.hasAttribute('validate-selected')) {
-						if(type == 'radio') postponed_radio_validation[name] = el.title;
-						else empty = !attr[name];
+						if(type == 'radio') {
+							postponed_radio_validation[name] = el.title;
+							if(v!==null && v!=='') radio_ok[name] = true;
+						}
+						else empty = (v==='' || v===null);
 					}
 				} else if(el.getAttribute('role') == 'widget') { 
-					attr[name] = $(this).data('widget').val();
+					var v = $(this).data('widget').val();
+					qwx.setValue(attr, name, v);
 					if(el.hasAttribute('validate-selected')) {
-						empty = !attr[name] || (typeof(attr[name])=='object' && attr[name].length==0);
+						empty = !v || (typeof(v)=='object' && v.length==0);
 					}
 				}
 
@@ -1719,7 +1793,7 @@ window.qwx.editDialog = function (id, opt) {
 		}
 		window.qwx.deepScan(form, 'input,textarea,select,[role=widget]', '[nosave]', validateElement);
 		for(var name in postponed_radio_validation) { 
-			if(!attr[name]) { 
+			if(!radio_ok[name]) { 
 				empty_fields.push(postponed_radio_validation[name] || name);
 			}
 		}
@@ -1749,6 +1823,7 @@ window.qwx.editDialog = function (id, opt) {
 	};
 	return false;
 };
+	
 window.qwx.editDialog.prototype = Object.create(window.qwx.widget.prototype);
 window.qwx.editDialog.prototype.constructor = window.qwx.editDialog;
 window.qwx.editDialog.prototype.save = function(form, ops, cb) { 
@@ -1760,13 +1835,57 @@ window.qwx.editDialog.prototype.save = function(form, ops, cb) {
 window.qwx.editDialog.prototype.close = function() { 
 		this.modal.modal('hide');
 }
+window.qwx.editDialog.prototype.fillInputs = function(dialog, obj) {
+	dialog.find('input[type=text],input[type=number],textarea').each(function() { 
+		var n = this.name;
+		this.disabled = self.disabled;
+		if(n) {
+			var v = qwx.getValue(obj, n);
+			this.value = v!=undefined ? obj[n] : '';
+		}
+	});
+	dialog.find('select').each(function() {
+		this.disabled = self.disabled;
+		if(this.name) {
+			var v = qwx.getValue(obj, this.name);
+			$(this).val( v && (typeof v == 'object' ? v.id: v ));
+		}
+	});
+	dialog.find('input[type=checkbox]').each(function() {
+		this.disabled = self.disabled;
+		if(this.name) {
+			var v = qwx.getValue(obj, this.name);
+			if(v) v = (typeof v == 'object' ? v.id : v);
+			this.checked = (v=='t' || v > 0);
+		}
+	});
+	dialog.find('input[type=radio]').each(function() {
+		this.disabled = self.disabled;
+		if(this.name) {
+			var v = qwx.getValue(obj, this.name);
+			if(v!=undefined) this.checked = ((typeof v == 'object' ? v.id : v) == this.value)
+		}
+	});
+	dialog.find('[role=widget]').each(function() {
+		var n = this.getAttribute('name');
+		var w = $(this).data('widget');
+		if(n) w.val(qwx.getValue(obj, n)); 
+		if(self.disabled) w.setDisabled(true);
+	});
+}
+
 /*-- checkboxarray -- */
 window.qwx.checkBoxArray = function(place, opt) {
 	qwx.widget.call(this, place, opt);
-	var el = $('<div class="btn-group" data-toggle="buttons"/>').appendTo(place);
-	this.value = [];
+	var el = $('<div class="btn-group"/>').appendTo(place);
+	this.value = null;
 	var self = this;
 	if(opt.values) {
+		if(opt.nullValue) {
+			self.nullValue = opt.nullValue;
+			this.nullElement =$('<input type="checkbox"/>').on('change', function(ev){ ev.stopPropagation()})
+				.prependTo (this.nullLabel = $('<label class="btn btn-default btn-null"/>').append('&nbsp;' + opt.nullValue).appendTo(el));
+		}		
 		for(var i=0;i<opt.values.length;i++) { var s = opt.values[i];
 			var b = $('<label class="btn btn-default"/>').append( 
 				$('<input type="checkbox"/>').prop('value',s.id).on('change', function(ev){ ev.stopPropagation();} )
@@ -1775,14 +1894,23 @@ window.qwx.checkBoxArray = function(place, opt) {
 			if(s.checked) { self.value.push(s.id); b.addClass('active'); } 
 		}
 	}
-	el.on('click', function() {
-		setTimeout(function() { 
-			el.find('.btn').removeClass('focus');
-			el.find('input[type=checkbox]').each(function() { this.checked = false; });
-			self.value = []; 
-			el.find('.btn.active input').each(function() { self.value.push(this.value); this.checked = true;});
-			place.trigger('change');
-		}, 0 );	
+	el.find('label.btn input').on('click', function(ev) {
+		ev.stopPropagation();
+		var cbx = this;
+		var btn = $(this.parentNode);
+		var nullClicked = false;
+		if(cbx.checked) {
+			btn.addClass('active');
+			if(btn.hasClass('btn-null')) {
+				el.find('.btn.active').not('.btn-null').removeClass('active').find('input').prop('checked', false);
+				nullClicked = true;
+			} else { 
+				el.find('.btn-null').removeClass('active').find('input').prop('checked', false);
+			} 
+		} else btn.removeClass('active');
+		self.value = nullClicked ? null
+			: el.find('.btn.active input').get().map(cbx => cbx.value);
+		place.trigger('change');
 	});
 };
 window.qwx.checkBoxArray.prototype = Object.create(window.qwx.widget.prototype);
@@ -1790,11 +1918,25 @@ window.qwx.checkBoxArray.prototype.constructor = window.qwx.checkBoxArray;
 window.qwx.checkBoxArray.prototype.val = function(x) {
 	if(arguments.length==0) {
 		return this.value;
-	} else { 
+	} else {
+		this.place.find('label').removeClass('active');
+		if(x===null || x===undefined) {
+			if(this.nullValue) {
+				this.value = null;
+				this.place.find('.btn.active').not('.null').each(function() { $(this).removeClass('active').find('input')[0].checked = false; });
+				this.nullLabel.addClass('active');
+				this.nullElement[0].checked = true;
+			} else {
+				x = [];
+			}
+		}
 		if(x && typeof(x)=='object') {
-			this.place.find('label').removeClass('active');
+			if(this.nullValue) {
+				this.nullLabel.removeClass('active');
+				this.nullElement[0].checked = false;
+			}
 			this.value = [];
-			for(var i=0,l=x.length;i<l;i++) { 
+			for(var i=0,l=x.length;i<l;i++) {
 				var cbx = this.place.find('input[value=' + x[i] + ']');
 				cbx[0].checked = true;
 				cbx.parent().addClass('active');
